@@ -1,0 +1,7 @@
+variaveis var declaradas fora de funcoes serão globais
+variaveis var declaradas dentro de funcao serao acessiveis apenas dentro da funçao
+
+variaveis let terao escopo de bloco
+logo, variaveis em escopos diferentes nao terao conflito
+a preferencia é pelos escopos mais abranjenteso
+
