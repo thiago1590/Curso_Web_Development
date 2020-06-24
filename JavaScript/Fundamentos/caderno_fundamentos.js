@@ -40,7 +40,7 @@ const imprimirSoma = function (a,b){
     console.log(a+b)
 }
 
-//armazemando uuma funcao arrow em uma variavel
+//armazemando uma funcao arrow em uma variavel
 const soma = (a,b) => {
     return a + b
 }
@@ -103,3 +103,4 @@ function imprimirNomeGritado(obj) {
 
 const obj = { nome: 'Roberto' }
 imprimirNomeGritado(obj)
+
