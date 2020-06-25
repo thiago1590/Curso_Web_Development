@@ -30,3 +30,65 @@ function Pessoa(){
         console.log(self.idade)
     }.bind(this),1000)
 }
+
+//função callback
+const fabricantes = [7.7,9.8,6.7,5.4,2.9,7.3,8,10]
+
+function imprimir(nome,indice){
+    console.log(`${indice + 1}, ${nome}`)
+}
+
+fabricantes.forEach(imprimir)
+
+const notas = [7.7,9.8,6.7,5.4,2.9,7.3,8,10]
+
+
+let notasBaixas = [] //Sem callback
+for(let i in notas){
+    if(notas[i] < 7){
+        notasBaixas.push(notas[i])
+    }
+}
+
+const notasBaixas3 = notas.filter(nota => nota < 7) // Com callback
+console.log(notasBaixas)
+
+document.getElementsByTagName('body')[0].onclick = function(e){
+    console.log('o evento ocorrreu!')
+}
+
+//Funçoes Construtoras
+function Carro(velocidadeMaxima = 200,delta= 5){
+    let velocidadeAtual = 0
+
+    this.acelerar = function(){
+    
+        if(velocidadeAtual + delta <= velocidadeMaxima){
+        velocidadeAtual += delta
+    } else{
+        velocidadeAtual = velocidadeMaxima
+    }
+}
+
+this.getVelocidadeAtual = function(){
+    return velocidadeAtual
+}
+}
+
+const uno = new Carro
+uno.acelerar()
+console.log(uno.getVelocidadeAtual())
+
+//Contexto léxico
+const valor = 'Global'
+
+function minhaFuncao(){
+    console.log(valor)
+}
+
+function exec(){
+    const valor = 'Local'
+    minhaFuncao()
+}
+
+exec()
