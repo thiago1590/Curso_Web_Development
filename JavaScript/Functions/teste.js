@@ -1,13 +1,16 @@
-const valor = 'Global'
-
-function minhaFuncao(){
-    console.log(valor)
+// Factory simples
+function CriarPessoa(){
+    return{
+        nome:'Ana',
+        sobrenome:'Silva'
+    }
 }
 
-function exec(){
-    const valor = 'Local'
-    minhaFuncao()
+function CriarProduto(nome=coca,preço=4){
+    return{
+        nome,
+        preço
+    }
 }
-
-exec()
+console.log(CriarProduto('cocaCola',5))
 

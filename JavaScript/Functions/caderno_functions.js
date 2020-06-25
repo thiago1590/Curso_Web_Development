@@ -92,3 +92,27 @@ function exec(){
 }
 
 exec()
+
+//Closure
+  //é o escopo criado quando uma função é declarada
+  //Esse escopo permite a funcao acessar e manipular variaveis externas
+
+const x = 'Global'
+
+function fora(){
+    const x = 'Local'
+    function dentro(){
+        return x
+    }
+    return dentro
+}
+const minhaFuncao = fora()
+console.log(minhaFuncao())
+
+// Factory simples
+function CriarPessoa(){ //é uma função que retorna um objt
+    return{
+        nome:'Ana',
+        sobrenome:'Silva'
+    }
+}
