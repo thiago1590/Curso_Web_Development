@@ -1,0 +1,384 @@
+﻿var VinculacaoInstalacaoSelection = (function (InstalacaoSearchHelper) {
+    'use strict';
+
+    return VinculacaoInstalacaoSelection;
+
+    function VinculacaoInstalacaoSelection(isConfigPage) {
+        var self = this;
+        self.handleInstalacoesDesvinculadas = handleInstalacoesDesvinculadas;
+        self.handleInstalacoesVinculadas = handleInstalacoesVinculadas;
+        self.tabela_desvinculadas = document.getElementById("desvinculadas");
+        self.tabela_vinculadas = document.getElementById("vinculadas");
+        self.insertFirstRow = insertFirstRow;
+        self.instalacoesVinculadas = [];
+        self.instalacoesDesvinculadas = [];
+        self.houveMudancas = false;
+        self.setLoading = setLoading;
+
+        var instalacaoSearcher = new InstalacaoSearchHelper({
+            onSuccess: function () { },
+            onError: handleError
+        });
+
+        function handleInstalacoesDesvinculadas(data) {
+            self.instalacoesDesvinculadas = data;
+            buildHtmlDesvinculadas(self.instalacoesDesvinculadas);
+        }
+
+        function handleInstalacoesVinculadas(data) {
+            self.instalacoesVinculadas = data;
+            buildHtmlVinculadas(self.instalacoesVinculadas);
+        }
+
+        function handleError(erro) {
+            alert(erro);
+        }
+
+        function buildHtmlVinculadas(instalacoesVinculadas, buscaAtiva) {
+            if (instalacoesVinculadas.length == 0) {
+                insertFirstRow(self.tabela_vinculadas, "Nenhuma instalação vinculada.");
+            } else {
+                insertFirstRow(self.tabela_vinculadas);
+                addRows(instalacoesVinculadas, self.tabela_vinculadas);
+                activateSearchVinculada();
+                activateSelectables("vinculadas");
+            }           
+        }
+
+        function buildHtmlDesvinculadas(instalacoesDesvinculadas) {
+            if(instalacoesDesvinculadas.length == 0){
+                insertFirstRow(self.tabela_desvinculadas, "Nenhuma instalação disponível.");
+            } else {
+                insertFirstRow(self.tabela_desvinculadas);
+                addRows(instalacoesDesvinculadas, self.tabela_desvinculadas);
+                activateSearchDesvinculada();
+                activateSelectables('desvinculadas');
+            }           
+        }
+
+        function insertFirstRow(tabela, msg) {
+            if (!msg) tabela.innerHTML = "<tr class='borderBottom'><th>Instalação</th><th>Endereço</th><th>Bairro</th></tr>";
+            else tabela.innerHTML = msg;
+        }
+
+        function addRows(instalacoes, table) {
+            for (var i = 0; i < instalacoes.length; i++) {
+                var row = table.insertRow(-1);
+                row.classList.add("selectable");
+                row.classList.add(table.id);
+                var instalacaoNum = row.insertCell(-1);
+                var endereco = row.insertCell(1);
+                var bairro = row.insertCell(2);
+                instalacaoNum.innerHTML = instalacoes[i].Instalacao;
+                endereco.innerHTML = instalacoes[i].Endereco.EnderecoCompleto;
+                bairro.innerHTML = instalacoes[i].Endereco.Bairro;
+            }
+        }
+
+        function activateSelectables(especific) {
+            var selectables = "selectable";
+            if (especific) {
+                selectables = "selectable " + especific;
+            }
+            var trsSelectables = document.getElementsByClassName(selectables);
+            for (var i = 0; i < trsSelectables.length; i++) {
+                trsSelectables[i].addEventListener('click', function (event) {
+                    selectableToggle(this);
+                });
+            }
+        }
+
+        function selectableToggle(element) {
+            if (element.classList.contains("active")) {
+                selectableRemoveActive(element);
+            } else {
+                selectableAddActive(element);
+            }
+        }
+
+        function selectableAddActive(element) {
+            element.classList.add("active");
+        }
+
+        function selectableRemoveActive(element) {
+            element.classList.remove("active");
+        }
+
+        var btnVincular = document.getElementById('btn-vincular');
+        btnVincular.addEventListener('click', function () {
+            vincularSelecionadas(getSelectedDesvinculadas());
+        });
+
+        var btnDesvincular = document.getElementById('btn-desvincular');
+        btnDesvincular.addEventListener('click', function () {
+            desvincularSelecionadas(getSelectedVinculadas());
+        });
+
+        var btnDesvincularTodas = document.getElementById('btn-desvincular-todas');
+        btnDesvincularTodas.addEventListener('click', function () {
+            desvincularTodas();
+        });
+
+        var btnVincularTodas = document.getElementById('btn-vincular-todas');
+        btnVincularTodas.addEventListener('click', function () {
+            vincularTodas();
+        });
+
+        function getSelectedDesvinculadas() {
+            return document.getElementsByClassName('selectable desvinculadas active');
+        }
+
+        function getSelectedVinculadas() {
+            return document.getElementsByClassName('selectable vinculadas active');
+        }
+
+        function vincularSelecionadas(itens) {
+            for (var i = 0; i < itens.length; i++) {
+                pushAndRemoveItemFromArray(self.instalacoesVinculadas, self.instalacoesDesvinculadas, itens[i]);
+            }
+            rebuildHtmlBoth(self.instalacoesVinculadas, self.instalacoesDesvinculadas);
+        }
+
+        function desvincularSelecionadas(itens) {
+            for (var i = 0; i < itens.length; i++) {
+                pushAndRemoveItemFromArray(self.instalacoesDesvinculadas, self.instalacoesVinculadas, itens[i], true);
+            }
+            rebuildHtmlBoth(self.instalacoesVinculadas, self.instalacoesDesvinculadas);
+        }
+
+        function vincularTodas() {
+            var length = self.instalacoesDesvinculadas.length;
+            for (var i = 0; i < length; i++) {
+                pushAndRemoveItemFromArray(self.instalacoesVinculadas, self.instalacoesDesvinculadas);
+            }
+            rebuildHtmlBoth(self.instalacoesVinculadas, self.instalacoesDesvinculadas);
+        }
+
+        function desvincularTodas() {
+            var length = self.instalacoesVinculadas.length;
+            if (isConfigPage) {
+                for (var i = 0; i < length; i++) {
+                    pushAndRemoveItemFromArray(self.instalacoesDesvinculadas, self.instalacoesVinculadas, null, true);
+                }
+            } else {
+                for (var i = 0; i < length; i++) {
+                    pushAndRemoveItemFromArray(self.instalacoesDesvinculadas, self.instalacoesVinculadas, null, false);
+                }
+            }
+            rebuildHtmlBoth(self.instalacoesVinculadas, self.instalacoesDesvinculadas);
+        }
+
+        function rebuildHtmlBoth(instalacoesVinculadas, instalacoesDesvinculadas) {
+            self.tabela_desvinculadas.innerHTML = "";
+            buildHtmlDesvinculadas(instalacoesDesvinculadas);
+            self.tabela_vinculadas.innerHTML = "";
+            buildHtmlVinculadas(instalacoesVinculadas);
+            self.houveMudancas = true;
+        }
+
+        function pushAndRemoveItemFromArray(arrayToPush, arrayToRemove, tr, isDesvinculo) {
+            if (tr) {
+                var cod = tr.querySelector("td").innerHTML;
+                var i, el;
+                for (i = 0; i < arrayToRemove.length; i++) {
+                    el = arrayToRemove[i];
+                    if (el.Instalacao == cod) {
+                        el = checkDesvinculoEmConfig(el, isDesvinculo);
+                        break;
+                    }
+                }
+                arrayToRemove.splice(i, 1);
+                arrayToPush.push(el);
+                return;
+            } else {
+                var obj = checkDesvinculoEmConfig(arrayToRemove[0], isDesvinculo);
+                arrayToPush.push(obj);
+                removeItemFromArrayByIndex(arrayToRemove, 0);
+            }
+        }
+
+        function removeItemFromArrayByIndex(array, index) {
+            array.splice(index, 1);
+        }
+
+        function checkDesvinculoEmConfig(el, isDesvinculo) {
+            if ((isConfigPage && isDesvinculo) && el.StatusVinculoGC != null) {
+                el.StatusVinculoGC = "I";
+            } else if (!isDesvinculo && (el.StatusVinculoGC != "P" || el.StatusVinculoGC != "A")) {
+                el.StatusVinculoGC = null;
+            }
+            return el;
+        }
+
+        function showError(msgInfo, erro) {
+            msgInfo.classList.add("error");
+            msgInfo.classList.remove("hide");
+            msgInfo.classList.add("fade");
+            msgInfo.classList.add("show");
+            $('html, body').animate({
+                scrollTop: msgInfo.offsetTop
+            }, 1000);
+            msgInfo.innerHTML = erro.build();
+        }
+
+        function activateSearchDesvinculada() {
+            var btnBuscarDesvinculada = document.getElementById("btn-BuscaDesvinculada");
+            btnBuscarDesvinculada.addEventListener('click', buscaDesvinculada);
+        }
+
+        function buscaDesvinculada() {            
+            if (document.getElementById('buscaNumInstalacaoD').value != "" && document.getElementById('buscaNumInstalacaoD').value != null) {
+                var numInstalacao = document.getElementById('buscaNumInstalacaoD').value;
+                setLoading(self.tabela_desvinculadas);
+
+                var obj = buscaPorNumero(numInstalacao, self.instalacoesDesvinculadas);
+
+                if (obj.length == 0) {
+                    obj = buscaPorNumero(numInstalacao, self.instalacoesVinculadas);
+
+                    if (obj.length > 0) {
+                        self.tabela_desvinculadas.innerHTML = "Instalação está na parte de vinculadas.";
+                        showButtonLimparBuscaDHtml();
+                        return;
+                    }                                        
+                }
+                if (obj.length == 0) {
+                    instalacaoSearcher.onSuccess(function (data) {
+                        processSuccessBuscaDesvinculada(data, false);
+                    });
+                    instalacaoSearcher.buscarInstalacaoDesvinculada(numInstalacao);
+                }
+                else {
+                    processSuccessBuscaDesvinculada(obj, true);
+                }                                
+            } else {
+                limparBuscaVinculada();
+            }
+        }
+
+        function processSuccessBuscaDesvinculada(array, itensExistentesNaLista) {
+            var retornoBusca = [];
+
+            for (var i = 0; i < array.length; i++) {
+                retornoBusca.push(array[i]);
+                if (!itensExistentesNaLista) {
+                    self.instalacoesDesvinculadas.push(array[i]);
+                }                
+            }
+
+            if (retornoBusca.length == 0) {
+                self.tabela_desvinculadas.innerHTML = "Instalação não encontrada.";                
+            } else {
+
+                buildHtmlDesvinculadas(retornoBusca, true);
+            }
+            showButtonLimparBuscaDHtml();
+        }
+
+        function showButtonLimparBuscaDHtml() {
+            document.getElementById('limparBuscaDesvinculada').style.display = "block";
+            setConfigLimparBuscaDesvinculada();
+        }
+
+        function setConfigLimparBuscaDesvinculada() {
+            var link = document.getElementById("limparBuscaDesvinculada");
+            link.addEventListener('click', limparBuscaDesvinculada);
+        }
+
+        function limparBuscaDesvinculada() {
+            setLoading(self.tabela_desvinculadas);
+            document.getElementById("buscaNumInstalacaoD").value = "";
+            document.getElementById('limparBuscaDesvinculada').style.display = "none";
+            buildHtmlDesvinculadas(self.instalacoesDesvinculadas);
+        }
+
+        function activateSearchVinculada() {
+            var btnBuscarVinculadas = document.getElementById('btn-BuscaVinculada');
+            btnBuscarVinculadas.addEventListener('click', buscarVinculada);
+        }
+
+        function buscarVinculada() {            
+            if (document.getElementById('buscaNumInstalacaoV').value != "" && document.getElementById('buscaNumInstalacaoV').value != null) {
+                setLoading(self.tabela_vinculadas);
+                
+                var numInstalacao = document.getElementById('buscaNumInstalacaoV').value;
+                var obj = buscaPorNumero(numInstalacao, self.instalacoesVinculadas);
+
+                if (obj.length == 0) {
+                    obj = buscaPorNumero(numInstalacao, self.instalacoesDesvinculadas);
+
+                    if (obj.length > 0) {
+                        self.tabela_vinculadas.innerHTML = "Instalação está como desvinculada.";
+                        showButtonLimparBuscaVHtml();
+                        return;
+                    }
+                }
+                if (obj.length == 0) {
+                    instalacaoSearcher.onSuccess(function (data) {
+                        processSuccessBuscaVinculada(data, false);
+                    });
+                    instalacaoSearcher.buscarInstalacaoVinculada(numInstalacao);
+                } else {
+                    processSuccessBuscaVinculada(obj, true);
+                }                
+            } else {
+                limparBuscaVinculada();
+            }
+        }
+
+        function processSuccessBuscaVinculada(array, itensExistentesNaLista) {
+            var retornoBusca = [];
+
+            for (var i = 0; i < array.length; i++) {
+                retornoBusca.push(array[i]);
+                if (!itensExistentesNaLista) {
+                    self.instalacoesVinculadas.push(array[i]);
+                }                
+            }
+
+            if (retornoBusca.length == 0) {
+                self.tabela_vinculadas.innerHTML = "Instalação não encontrada.";                
+            } else {
+                buildHtmlVinculadas(retornoBusca, true);
+            }
+            showButtonLimparBuscaVHtml();
+        }
+
+        function showButtonLimparBuscaVHtml() {
+            document.getElementById('limparBuscaVinculada').style.display = "block";
+            setConfigLimparBuscaVinculada();
+        }
+
+        function setConfigLimparBuscaVinculada() {
+            var link = document.getElementById("limparBuscaVinculada");
+            link.addEventListener('click', limparBuscaVinculada);
+        }
+
+        function limparBuscaVinculada() {
+            setLoading(self.tabela_vinculadas);
+            document.getElementById("buscaNumInstalacaoV").value = "";
+            document.getElementById('limparBuscaVinculada').style.display = "none";
+            buildHtmlVinculadas(self.instalacoesVinculadas);
+        }
+
+        function buscaPorNumero(num, arr) {
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i].Instalacao == num) {
+                    return [arr[i]];
+                }
+            }
+            return [];
+        }
+
+        function setLoading(tabela) {
+            tabela.innerHTML = "";
+            insertFirstRow(tabela);
+            var divLoading = '<div style="width:100%;"><img src="./Images/mainLoader.gif" style="width: 80px; height: 80px; border-radius: 100px; margin-top: 2px;"></div>';
+            var row = tabela.insertRow(1);
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
+            cell2.innerHTML = divLoading;
+        }
+    }
+})(InstalacaoSearchHelper);

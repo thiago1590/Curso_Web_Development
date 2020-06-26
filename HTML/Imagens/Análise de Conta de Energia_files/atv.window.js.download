@@ -1,0 +1,168 @@
+var popup = null;
+var popupAlerta = null;
+var showClose = true;
+var largura;
+var altura;
+urlApp = "";
+
+function createWindow(url) {
+	
+	urlApp = url;
+	
+	if(popup == null){
+		
+		var popupWidth = 540;
+		var popupHeight = 420;
+		
+		if(isMSIE()){
+			popupWidth = 550;
+			popupHeight = 427;
+		}
+		
+		jQuery_1.window.prepare({
+		   dock: 'bottom',       // change the dock direction: 'left', 'right', 'top', 'bottom'
+		   animationSpeed: 200,  // set animation speed
+		   minWinLong: popupWidth, //540       // set minimized window long dimension width in pixel
+		   minWinNarrow: 119
+		});
+		
+		popup = jQuery_1.window({
+			title: "Light - Atendente Virtual",
+			icon: null,
+			width: popupWidth,
+			height: popupHeight,
+			checkBoundary: true,
+			withinBrowserWindow: true,
+			maximizable: true,
+			scrollable: false,
+			minimizable: true,
+			showFooter: false,
+			url: urlApp+"/ATV/home.do",
+			onClose: function() {
+				popup = null;
+		    },
+			onCascade: function(wnd) {
+				stopAlerta();
+		    }
+		});
+	}else{
+		popup.restore();
+	}
+	
+}			
+
+function getPopup(){
+	return popup;
+}
+
+function getWidth(){ //Incluido para suportar versões mais antigas do IE
+	return largura;
+}
+
+function getHeight(){ //Incluido para suportar versões mais antigas do IE
+	return altura;
+}
+
+function resize(w, h){
+	largura = w; //nova largura
+	altura = h; //nova largura
+	
+	var iFrameHeight = h; //Altura do iFrame
+	
+	//Incluido para suportar versões mais antigas do IE
+	if( msIEversion() >= 6 && msIEversion() <= 9 ) {
+		iFrameHeight = iFrameHeight - 130; // caso IE < 10
+	} else {
+		iFrameHeight = iFrameHeight - 120; //caso chrome
+	}
+	popup.getFrame().css("height", iFrameHeight);
+	
+	if (h == 539) {
+		popup.resize(w, 560);
+	}
+	else if (h == 556) { //ie
+		popup.resize(w, 577);
+	}
+	else if (h == 554) { //chrome
+		popup.resize(w, 570);	
+	}
+	else if (h == 471) { //ie
+		popup.resize(w, 530);
+	}
+	else if (h == 467) { //chrome
+		popup.resize(w, 520);
+	}
+	else if (h == 489) { //IE old
+		popup.resize(w, 552);
+	}
+	else if (h == 490) {
+	    popup.resize(w, 690);
+	    $('[class^="window_frame"]').width(w);
+	    $('[class^="window_frame"]').height(690);
+	}
+	else {
+		popup.resize(w, h);
+	}
+}
+
+//Versões antigas do IE
+function msIEversion() {
+
+    var ua = window.navigator.userAgent;
+    var msie = ua.indexOf("MSIE");
+
+    if (msie > 0) // If Internet Explorer, return version number
+        return parseInt(ua.substring(msie + 5, ua.indexOf(".", msie)));
+    else // If another browser, return 0
+        return 0;
+}
+
+function isMSIE() {
+//	return navigator.userAgent.match(/msie/i) && !window.XMLHttpRequest
+	var ua = navigator.userAgent.toLowerCase();
+	return (ua.indexOf("msie") >= 0);
+}
+
+function trocaCor(){
+	var bgColor = $('div.atvTitle').css('background-color')
+	if(bgColor == 'rgb(255, 195, 52)' || bgColor == 'rgb(255,195,52)'){
+		$('div.atvTitle').css('background-color', 'rgb(243, 103, 34)');
+	}else{
+		$('div.atvTitle').css('background-color', 'rgb(255, 195, 52)');
+	}
+}		
+
+function startAlerta(){
+	clearInterval(popupAlerta);
+	popupAlerta = window.setInterval("trocaCor()", 1000);
+}
+
+function stopAlerta(){
+	clearInterval(popupAlerta);
+	$('div.atvTitle').css('background-color', 'rgb(255, 195, 52)');
+}
+
+function removeClose(){
+	showClose = false;
+	$("div.window_function_bar img.closeImg").hide();
+}
+
+function changeHeader(){
+	$("div.window_header div.atvLineHeader001").remove();
+	$("div.window_header div.atvLineHeader002").remove();
+	$("div.window_header div.atvLineHeader003").remove();
+	$("div.window_header div.atvTitle").remove();
+	$("div.window_header").height('22px');
+	$("div.window_function_bar img.closeImg").show();
+	
+	jQuery_1.window.prepare({
+	   dock: 'bottom',       // change the dock direction: 'left', 'right', 'top', 'bottom'
+	   animationSpeed: 200,  // set animation speed
+	   minWinLong: 540,       // set minimized window long dimension width in pixel
+	   minWinNarrow: 24
+	});
+}
+
+function getIframe(){
+	return $('iframe')[0];
+}

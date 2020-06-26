@@ -1,0 +1,60 @@
+﻿var ErrorMessage = (function () {
+    'use strict';
+    return ErrorMessage;
+    /**
+     * Prototype parar criar mensagens de erro dinâmicas.
+     * Use o método .add(text) para adicionar mensagens e o método build() para pegar a mensagem completa.
+     * Pode-se definir a propriedade errorClass, usando assim o método addIfEmpty(element, text) que adicionará
+     * essa classe automaticamente nos inputs com erro.
+     * Pode-se usar o método hasErrors() para verificar se tem mensagens de erro.
+     */
+    function ErrorMessage() {
+        var msg = "";
+        this.errorClass = false;
+
+        this.add = function (text) {
+            if (msg === "") msg = text;
+            else {
+                msg += "<br>" + text;
+            }
+        }
+
+        this.addIfEmpty = function (element, text) {
+            var value;
+
+            var isJquery = typeof element.val === "function";
+
+            if (isJquery) {
+                value = element.val();
+            } else {
+                value = element.value;
+            }
+
+            if (!value) {
+                this.add(text);
+                if (this.errorClass) {
+                    if (isJquery) {
+                        element.addClass(this.errorClass);
+                    } else {
+                        element.classList.add(this.errorClass);
+                    }
+                }
+            }
+        }
+
+        this.build = function () {
+            return msg;
+        }
+
+        this.hasErrors = function () {
+            return msg !== "";
+        }
+
+        this.showErrorMessage = function (elementId, text) {
+            $("#" + elementId).html(text);
+            $('html, body').animate({
+                scrollTop: 0
+            }, 1000);
+        }
+    }
+})();

@@ -1,0 +1,324 @@
+﻿var Dropzone = (function () {
+    'use strict';
+
+    var dropzoneMap = {};
+
+    /** Prototype para controlar dropzones. Utiliza as APIs Drag and Drop, DataTransferItemList e DataTransfer do HTML5.
+     *  Para usá-la, crie uma variavel e passe um objeto com opções.
+     *  Ex.:
+     *  var dropzone = new Dropzone({
+     *      dropzone: $("elemento onde deve arrastar os arquivos"),
+     *      tbody: $("tbody onde serão colocados <tr> com nome e tamanho dos arquivos, e um botão para remover"),
+     *      maxFiles: Number. o padrão é 10,
+     *      maxSize: Number de bytes máximo de um único arquivo,
+     *      maxTotalSize: Number. tamanho total máximo dos arquivos,
+     *      extensions: array de strings com extensoes permitidas. Caso não seja passado, usará ["jpg", "jpeg", "png", "bmp", "gif", "doc", "docx", "pdf"],
+     *      fileName: string com o nome para ser adicionado ao FormData. Por padrão, será "Arquivo", fazendo com fique "Arquivo1", "Arquivo2" etc
+     *      addingFile: Function para ser chamada quando tentar adicionar um arquivo. sem parametros,
+     *      fileRemoved: Function para ser executada quando um arquivo for removido.
+     *      onError: Function para ser chamada quando algum erro ocorrer,
+     *      errorElement: Elemento jQuery que terá seu html alterado com as mensagens de erro e sofrerá animações de fadeIn
+     *  });
+     * 
+     *  Pode-se usar a função .changeMaxFiles(newMaxFiles) para mudar dinamicamente o numero máximo de arquivos.
+     *  Arquivos excedentes serão removidos.
+     * 
+     *  A função de onError recebe sempre dois parâmetros: a razão e o objeto File que gerou o erro.
+     *  A razão pode ser "MaxFiles", "MaxSize", "MaxTotalSize" ou "Extension".
+     *  Caso seja "Extension", também recebe a extensão do arquivo como terceiro parametro.
+     * 
+     *  Veja a página de solicitar micro mini para exemplo do HTML (Views/EnergiaAlternativa/SolicitarEnergiaAlternativa.cshtml),
+     *  nas sections de documentação técnica e comprovação de responsável pelo local.
+     * 
+     *  Para pegar os arquivos, use dropzone.getFiles();
+     *  Essa função retorna um array com objetos do tipo File. Idealmente deve-se chamá-la no form submit,
+     *  criando um FormData e enviando por Ajax.
+     * 
+     *  Por usar os eventos de drop (que não interagem com um input), não há como enviar em um form submit padrão.
+     * 
+     *  A base para este arquivo foram os exemplos disponíveis em https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/File_drag_and_drop
+     */
+
+    function Dropzone(options) {
+
+        var dropzone = options.dropzone;
+        var tbody = options.tbody;
+        var maxFiles = options.maxFiles || 10;
+        var maxSize = options.maxSize;
+        var addingFile = options.addingFile || noop;
+        var fileName = options.fileName || "Arquivo";
+        var fileRemoved = options.fileRemoved || noop;
+        var onError = options.onError || false;
+        var maxTotalSize = options.maxTotalSize;
+        var extensions = options.extensions || ["jpg", "jpeg", "png", "bmp", "gif", "doc", "docx", "pdf"];
+        var arquivos = [];
+        var totalFileSize = 0;
+        var errorElement = options.errorElement || false;
+        var titleLimit = options.titleLimit || 50;
+        if (!options.hideError) hideError = noop;
+
+        var self = this;
+
+        var required = false;
+
+        if (! dropzone instanceof jQuery) throw new Error("Elemento para criar a dropzone não fornecido ou não é um objeto jQuery");
+        if (! tbody instanceof jQuery) throw new Error("tbody para colocar os dados dos arquivos não fornecido ou não é um objeto jQuery");
+        if (options.onError && typeof onError !== "function") throw new Error("onError não é uma função");
+        if (options.addingFile && typeof addingFile !== "function") throw new Error("addingFile não é uma função");
+        if (options.fileRemoved && typeof fileRemoved !== "function") throw new Error("fileRemoved não é uma função");
+        if (extensions && Object.prototype.toString.call(extensions) !== "[object Array]") throw new Error("extensions não é array");
+
+        //Evitar o comportamento padrão do browser nos eventos de drag
+        dropzone.on("dragover", preventDefault);
+        dropzone.on("dropend", clearDragData);
+
+        //Input file hidden que não será colocado no DOM.
+        //Usado para triggar a escolha de arquivos pelo browser.
+        //Ao clicar na dropzone ocorrerá um click nesse input também.
+        var hiddenInput = $("<input type='file' multiple />");
+
+        dropzone.on("click", function () {
+            hiddenInput.click();
+        });
+
+        hiddenInput.on("change", handleEvent);
+        dropzone.on("drop", handleEvent);
+
+        dropzoneMap[dropzone.attr("id")] = self;
+
+        function handleEvent(ev) {
+            var files;
+
+            if (ev.type === "drop") files = getFilesFromDropEvent(ev);
+            else if (ev.type === "change") files = getFilesFromInputEvent(ev);
+            else return;
+
+            addingFile(); hideError();
+
+            for (var i = 0; i < files.length; i++) {
+                addFile(files[i]);
+            }
+
+            //se remover um arquivo e adicionar de novo, ele continuaria no input, e por ser o mesmo arquivo,
+            //não dispararia o evento de change.
+            hiddenInput.val("");
+        }
+
+        function addFile(file) {
+            if (arquivos.length === maxFiles) {
+                handleError("MaxFiles", file);
+                return;
+            }
+            if (maxSize && (file.size > maxSize)) {
+                handleError("MaxSize", file);
+                return;
+            }
+
+            var fileName = file.name;
+            fileName = fileName.substr(0, fileName.lastIndexOf('.'));
+            if (fileName.length > titleLimit) {
+                handleError("TitleLimit", file);
+                return;
+            }
+            
+            if (extensions) {
+                var extension = getExtension(file.name);
+                if (extensions.indexOf(extension.toLowerCase()) === -1) {
+                    handleError("Extension", file, extension);
+                    return;
+                }
+            }
+
+            for (var i = 0; i < arquivos.length; i++) {
+                if (file.name == arquivos[i].name) {
+                    handleError("NameRepeated", file);
+                    return;
+                }
+            }
+
+            //maxTotalSize deve ser a última verificação, pois ele altera o totalFileSize.
+            //Se outra verificação der erro, ela não retornaria o totalFileSize ao valor original.
+            if (maxTotalSize) {
+                totalFileSize += file.size;
+                if (totalFileSize > maxTotalSize) {
+                    totalFileSize -= file.size;
+                    handleError("MaxTotalSize", file);
+                    return;
+                }
+            }
+
+            var element = $('<tr style="display: none;">' +
+                               '<td data-th="Arquivo">' + file.name + '</td>' +
+                               '<td data-th="Tamanho">' + formatBytes(file.size) + '</td>' +
+                               '<td> <button class="btn btn-primary btn-dropzone-remove"> Remover </button> </td>' +
+                            '</tr>');
+
+            file.element = element;
+
+            arquivos.push(file);
+
+            element.find("button").on("click", function () {
+                remove(file);
+            });
+
+            tbody.append(element);
+            element.fadeIn(300);
+        }
+
+        function remove(dropzoneFile) {
+            arquivos.splice( arquivos.indexOf(dropzoneFile), 1);
+            totalFileSize -= dropzoneFile.size;
+            dropzoneFile.element.remove();
+            dropzoneFile = undefined;
+            fileRemoved(); hideError();
+        }
+
+        function getFilesFromDropEvent(ev) {
+            ev.preventDefault();
+            var dt = ev.dataTransfer;
+            if (dt === undefined) dt = ev.originalEvent.dataTransfer;
+            var files = [];
+            // If dropped items aren't files, reject them
+            if (dt.items) {
+                // Use DataTransferItemList interface to access the file(s)
+                for (var i = 0; i < dt.items.length; i++) {
+                    if (dt.items[i].kind === "file") {
+                        files.push( dt.items[i].getAsFile() );
+                    }
+                }
+            } else {
+                // Use DataTransfer interface to access the file(s)
+                files = dt.files;
+            }
+            return files;
+        }
+
+        function getFilesFromInputEvent(ev) {
+            var files = ev.currentTarget.files;
+            return files;
+        }
+
+        function handleError(error, file, extension) {
+            if (onError) {
+                return onError(error, file, extension);
+            }
+
+            if (errorElement) {
+                errorElement.fadeOut(function () {
+                    errorElement.html(self.defaultErrorMessage(error, file, extension));
+                    errorElement.fadeIn(300);
+                });
+            }
+        }
+
+        function hideError() {
+            if (errorElement) {
+                errorElement.fadeOut(300);
+            }
+        }
+
+        this.getFiles = function () {
+            return arquivos;
+        }
+
+        this.defaultErrorMessage = function (error, file, extension) {
+            switch (error) {
+                case "MaxFiles":
+                    return "Você já atingiu o limite máximo de arquivos.";
+                case "MaxSize":
+                    return "Arquivo maior que o limite permitido (" + formatFileSize(maxSize) + ").";
+                case "MaxTotalSize":
+                    return "Adicionar esse arquivo excederá o limite máximo de " + formatFileSize(maxTotalSize) + ".";
+                case "Extension":
+                    return "O tipo de arquivo " + extension + " não é permitido.";
+                case "NameRepeated":
+                    return "Já foi adicionado um arquivo com o mesmo nome.";
+                case "TitleLimit":
+                    return "O nome do arquivo não pode ultrapassar 50 caracteres.";
+                default:
+                    return "Sem mensagem para o erro '" + error + "'.";
+            }
+        }
+
+        this.changeMaxFiles = function (newMaxFiles) {
+            maxFiles = newMaxFiles;
+            if (arquivos.length > newMaxFiles) {
+                for (var i = arquivos.length -1; i >= newMaxFiles; i--) {
+                    remove(arquivos[i]);
+                }
+            }
+        }
+
+        this.changeMaxSize = function (newSize) {
+            //maxSize = newSize;
+        }
+
+        this.changeMaxTotalSize = function (newSize) {
+            maxTotalSize = newSize;
+        }
+
+        this.getFileName = function() {
+            return fileName;
+        }
+
+        this.clear = function () {
+            while (arquivos.length !== 0) {
+                //always remove first element since its actually an array. the remove function also removes the related HTML
+                remove(arquivos[0]); 
+            }
+        }
+
+        Object.defineProperty(self, "required", {
+            get: function () { return required; },
+            set: function (value) { required = value; }
+        });
+
+    }
+
+    function preventDefault(event) {
+        event.preventDefault();
+    }
+
+    function clearDragData(ev) {
+        // Remove all of the drag data
+        var dt = ev.dataTransfer;
+        if (dt.items) {
+            // Use DataTransferItemList interface to remove the drag data
+            for (var i = 0; i < dt.items.length; i++) {
+                dt.items.remove(i);
+            }
+        } else {
+            // Use DataTransfer interface to remove the drag data
+            ev.dataTransfer.clearData();
+        }
+    }
+
+    Dropzone.getById = function (id) {
+        return dropzoneMap[id];
+    }
+
+    function noop() { }
+
+    function getExtension(fname) {
+        //https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript
+        return fname.slice((fname.lastIndexOf(".") - 1 >>> 0) + 2);
+    }
+
+    function formatBytes(a, b) { if (0 == a) return "0 Bytes"; var c = 1e3, d = b || 2, e = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"], f = Math.floor(Math.log(a) / Math.log(c)); return parseFloat((a / Math.pow(c, f)).toFixed(d)) + " " + e[f] }
+
+    function formatFileSize(num) {
+        if (num > 0) {
+            if (num < 1024) { return [num + " Bytes"] }
+            if (num < 1048576) { return [num / 1024 + " KB"] }
+            if (num < 1073741824) { return [num / 1024 / 1024 + " MB"] }
+            if (num < 1099511600000) { return [num / 1024 / 1024 / 1024 + " GB"] }
+
+            return [num / 1024 / 1024 / 1024 / 1024 + " TB"];
+        }
+
+        return Math.floor(num, 2);
+    }
+
+    return Dropzone;
+
+})();

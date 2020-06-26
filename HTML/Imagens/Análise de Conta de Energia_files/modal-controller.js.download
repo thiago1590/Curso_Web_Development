@@ -1,0 +1,201 @@
+﻿(function () {
+    'use strict';
+
+    /** 
+     * -> Sobre:
+     *    Prototype para criar overlays/modais e controlá-las. Inclui como conteúdo padrão um loader, que pode ser usado.
+     *    Ao instanciar, passe um objeto com as opções:
+     *    Ex.: var modal = new ModalController({
+     *        overlayId: 'string, id do overlay criado'
+     *    });
+     *    O overlay terá a classe fade para uma animação de fadeIn e fadeOut.
+     *    Todo conteúdo será colocado dentro de um container que também terá essa classe.
+     *    Caso vá criar uma modal, deve-se ter o HTML completo, com todas as classes de modal.
+     * 
+     * -> Métodos:
+     *    .show() -> Mostra a modal com o conteúdo que ela tiver
+     *    .close() -> Fecha a modal
+     *    .showLoader() -> Seta o conteudo da modal como o gif de loading e mostra a mesma caso não esteja visível
+     *    .iframeLoader(agvPath: string) -> Seta o conteudo da modal com uma box contendo um iframe com o gif de loading, e mostra a mesma caso não esteja visível.
+     *                                      Dessa forma, a reprodução do gif não é interrompida quando a página é recarregada.
+     *                                      Caso agvPath não seja passado, usará window.rootPath.
+     *    .setContent(content: string | HTMLElement) -> Define o conteúdo da modal. Caso seja string, será setado com innerHTML, e caso seja um
+     *                                                  HTMLElement será adicionado com .appendChild. Além disso, serão procurados elementos
+     *                                                  com a classe "modalClose" para colocar um evento de click que feche a modal.
+     *    
+     * 
+     */
+
+    var imgAltText = "Por favor, aguarde...";
+
+    function ModalController(options) {
+        
+        if (!options) throw new Error("Objeto de opções não fornecido");
+
+        this.show = show;
+        this.close = close;
+        this.setContent = setContent;
+        this.showLoader = showLoader;
+        this.iframeLoader = iframeLoader;
+        this.destroy = destroy;
+        this.hide = hide;
+
+        var modalShown = false;
+
+        var closeEvent = options.onClose || noop;
+
+        var overlay = createOverlay(options.overlayId);
+        var loader = createLoader();
+        overlay.appendChild(loader);
+
+        overlay.style.display = "none";
+        document.body.appendChild(overlay);
+
+        var oldContent;
+
+        if (options.asyncContent) {
+
+        }
+
+        var clickEventOnOverlay = false;
+
+        function show() {
+            if (modalShown) return;
+            overlay.style.display = "";
+            document.body.classList.add("modal-open");
+            overlay.classList.add("show");
+            modalShown = true;
+        }
+
+        function close() {
+            if (!modalShown) return;
+            document.body.classList.remove("modal-open");
+            overlay.classList.remove("show");
+            modalShown = false;
+            closeEvent();
+        }
+
+        function setContent(content) {
+            if (overlay.firstChild)
+                overlay.removeChild(overlay.firstChild);
+
+            var container = createFadeInDiv();
+
+            if (typeof content === "string") {
+                container.innerHTML = content;
+                var arr = container.getElementsByTagName('script');
+                for (var n = 0; n < arr.length; n++) {
+                    appendScript(arr[n]);
+                }
+            } else if (content instanceof HTMLElement) container.appendChild(content);
+            else throw new Error("O conteudo não é uma string nem um elemento HTML: " + content);
+
+            overlay.appendChild(container);
+            addEvent(".modalClose", "click", close);
+
+            if (options.clickOutsideToClose && !clickEventOnOverlay) {
+                overlay.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    if (event.target.classList.contains("overlay")) {
+                        close();
+                    }
+                });
+                clickEventOnOverlay = true;
+            }
+
+            if (window.atvAntigo) {
+                addEvent(".icon-chat", "click", atvAntigo.show);
+                addEvent(".open-chat", "click", atvAntigo.show);
+            }
+
+        }
+
+        function appendScript(script) {
+            var s = document.createElement("script");
+            s.src = script.src;
+            document.body.appendChild(s);
+        }
+
+        function showLoader() {
+            setContent(loader);
+            show();
+        }
+
+        function iframeLoader(agvPath) {
+            var path = agvPath || window.rootPath;
+
+            var outerDiv = document.createElement("div");
+            outerDiv.classList.add("boxLoader");
+
+            var iframe = document.createElement("iframe");
+            iframe.src = path + "Content/loading.html";
+
+            iframe.style.height = "244px";
+
+            outerDiv.appendChild(iframe);
+
+            setContent(outerDiv);
+            show();
+        }
+
+        function destroy() {
+            if (!modalShown) return;
+            document.body.classList.remove("modal-open");
+            overlay.classList.remove("show");
+            modalShown = false;
+            setContent("");
+        }
+
+    }
+
+    function createOverlay(id) {
+        if (!id) throw new Error("Id do overlay não fornecido");
+        var overlay = document.createElement("div");
+        overlay.classList.add("overlay");
+        overlay.classList.add("fade");
+        overlay.id = id;
+        return overlay;
+    }
+
+    function createLoader() {
+
+        var outerParent = document.createElement("div");
+
+        var outerDiv = document.createElement("div");
+        outerDiv.classList.add("boxLoader");
+        var img = document.createElement("img");
+        img.title = imgAltText;
+        img.alt = imgAltText;
+        img.src = window.rootPath + "Images/mainLoader.gif"
+        outerDiv.appendChild(img);
+
+        outerParent.appendChild(outerDiv);
+
+        var divTexto = document.createElement("div");
+        divTexto.classList.add("loaderText");
+        divTexto.innerHTML = "Por favor, aguarde...";
+
+        outerParent.appendChild(divTexto);
+
+        return outerParent;
+    }
+
+    function createFadeInDiv() {
+        var div = document.createElement("div");
+        div.classList.add("fade");
+        div.classList.add("show");
+        return div;
+    }
+
+    function hide() {
+        document.getElementById(options.overlayId).style.display = "none";
+        modalShown = false;
+    }
+
+    window.ModalController = ModalController;
+    /*
+    var preloadGif = document.createElement("img");
+    preloadGif.style.display = "none";
+    preloadGif.src = window.rootPath + "Images/mainLoader.gif";
+    preloadGif = undefined;*/
+})();

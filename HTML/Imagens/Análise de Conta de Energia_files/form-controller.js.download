@@ -1,0 +1,454 @@
+﻿var FormController = (function ($, ErrorMessage) {
+    'use strict';
+    
+    /**
+     * -> Sobre:
+     *    Prototype para controlar formulários. Faz o envio por ajax e controla botões e mensagems de erro.
+     *    Caso o retorno seja erro use um código HTTP de sucesso, com um campo
+     *    "error" com o valor "true" na resposta. Ex.: { error: "true", errorMessages: ["1", "2"] }.
+     *    Caso seja colocado a Partial View de AlterarDadosCadastrais, InformacoesSobreDebitos ou TabelaEquipamentosEletricos,
+     * o FormController vai automaticamente lidar com elas.
+     * 
+     * -> Opções:
+     *    Ao criar um FormController, o objeto de opções pode ter as seguintes chaves e valores.
+     *    - form : HTMLElement do formulário. Irá pegar os atributos action e method para o ajax. Caso não seja passado e só exista um no HTML, tentará pegá-lo.
+     *    - onSubmit: função para ser executada quando o formulário for submetido. Se retornar true, continua a execução
+     *    - successText: texto de sucesso para ser mostrado se a resposta do servidor for de sucesso. Por padrão é "Operação efetuada com sucesso.".
+     *    - msgInfo: seletor para o elemento que vai receber o texto de erro do formulário. Por padrão, é "#msg-info".
+     *    - handleMsgInfo: true se o FormController deve exibir mensagens de erro e sucesso no elemento msgInfo. Por padrão é true.
+     *    - btnLoading: seletor para um elemento que receberá a classe "btnLoader" e o atributo disabled quando o ajax iniciar.
+     *                  Essa classe e o atributo serão removidos quando o ajax finalizar
+     *    - beforeAsync: função para ser executada antes do ajax ser enviado
+     *    - success: função para ser executada quando o ajax der sucesso
+     *    - error: função para ser executada quando o ajax der erro
+     *    - complete: função para ser executada quando o ajax for concluído
+     *    - resetFormOnSuccess: se deve chamar form.reset() quando der success. Por padrão é true.
+     *    - dropzone: Dropzone do qual serão retirados arquivos e adicionados no FormData
+     *    - dropzoneRequired: se é obrigatorio que o dropzone tenha pelo menos 1 arquivo. false por padrão. Pode ser também uma função que será chamada, sem parâmetros. O retorno deve ser true ou false
+     *    - validateRecatpcha: se deve verificar o recaptcha. Por padrão é true
+     *    - hideOnSuccess: esconde o elemento após sucesso no envio do formulário. Exemplo: hideOnSuccess: $("#div-principal") 
+     *    - clearDropzoneOnSuccess: se deve remover os elementos da dropzone quando der sucesso no envio   
+     *    - disableValidation: se deve desativar todas as validações padrão (views parciais, elementos required e elementos com mensagems de erro)
+     * 
+     * -> Métodos:
+     *    .getErrorMessage() -> retorna um objeto do tipo ErrorMessage. Caso não existe, chama createErrorMessage().
+     *                          Internamente verifica esse objeto para ver se a onSubmit gerou erros, e mostrá-los caso handleMsgInfo seja true.
+     *    .createErrorMessage() -> cria um objeto do tipo ErrorMessage, usado para verificar mensagens de erro.
+     *    .showErrorText(text: string) -> mostra uma mensagem de erro na div de mensagens.
+     *    .clearMsgInfo() -> limpa classes e esconde a div de mensagens.
+     *    .showSuccessText(text: string) -> mostra mensagem de sucesso na div de mensagens.
+     */
+    function FormController(options) {
+        if (!options) options = {};
+        if (!options.form) {
+            var forms = document.querySelectorAll("form");
+            if (forms.length === 0) throw new Error("FormController: Nenhuma tag <form> encontrada.");
+            if (forms.length > 1) throw new Error("FormController: " + forms.length + " tags <form> encontradas. Não é possível saber qual form usar.");
+            options.form = forms[0];
+        }
+        if (!options.onSubmit) options.onSubmit = returnTrue;
+        if (!options.successText) options.successText = "Operação efetuada com sucesso.";
+        if (!options.msgInfo) options.msgInfo = "#msg-info";
+        if (options.async === undefined) options.async = true;
+        if (options.handleMsgInfo === undefined) options.handleMsgInfo = true;
+        if (options.resetFormOnSuccess === undefined) options.resetFormOnSuccess = true;
+        if (options.btnLoading === undefined) options.btnLoading = "#btnEnviar";
+        if (options.async) {
+            if (options.success && typeof options.success !== "function") throw new Error("Função de sucesso do async não fornecida");
+            if (options.error && typeof options.error !== "function") throw new Error("Função de erro do async não fornecida.");
+            if (options.complete && typeof options.complete !== "function") throw new Error("Função de async completo não fornecida");
+        }
+        if (options.clearDropzoneOnSuccess === undefined) options.clearDropzoneOnSuccess = true;
+        if (options.checkAlteredUserData === undefined) options.checkAlteredUserData = false;
+
+        if (options.disableValidation === undefined) options.disableValidation = false;
+
+        if (window.context.logado) {
+            options.validateRecaptcha = !window.context.logado;
+        } else {
+            options.validateRecaptcha = true;
+        }
+        if (options.preventDuplicateMessages === undefined) options.preventDuplicateMessages = false;
+
+        var errors;
+
+        this.createErrorMessage = createErrorMessage;
+        this.getErrorMessage = getErrorMessage;
+        this.showErrorText = showErrorText;
+        this.clearMsgInfo = clearMsgInfo;
+        this.showSuccessText = showSuccessText;
+        this.cancelForm = function (flag) {
+            options.disableValidation = flag;
+        }
+
+        var msgInfo = typeof (options.msgInfo) === "object" ? options.msgInfo : false;
+
+        var btnLoading;
+        if (options.handleMsgInfo)
+            msgInfo = document.querySelector(options.msgInfo);
+        if (options.btnLoading) {
+            btnLoading = document.querySelector(options.btnLoading);
+        }
+
+        btnLoading.addEventListener("click", function (event) {
+            toggleBtnLoading(true);
+            //caso o formulário deseje pode ignorar o timeout de segurança do blur
+            if (options.ignoreSafetyTimeout) {
+                onFormSubmit(event);
+            } else {
+                setTimeout(function () {
+                    onFormSubmit(event);
+                }, 1000); // adicionado setTimeout para resolver blur antes de um submit - para dar tempo para eventos de blur rodarem
+            }
+        });
+
+        options.form.noValidate = true;
+
+        function onFormSubmit(event) {
+            clearMsgInfo();
+            createErrorMessage();
+            extraFormData = undefined;
+            
+            validateEverything();
+
+            if (errors.hasErrors()) {
+                if (!window.context.logado && grecaptcha.getResponse().length != 0) {
+                    grecaptcha.reset();
+                }
+                showErrorText(errors.build());
+                toggleBtnLoading(false);
+                return stopEvent(event);
+            }
+
+            if (typeof options.beforeAsync === "function") options.beforeAsync();
+
+            try {
+                var valid = typeof options.onSubmit === "function" ? options.onSubmit() : true;
+            } catch (e) {
+                console.log(e);
+                toggleBtnLoading(false);
+                return stopEvent(event);
+            }
+
+            if (!valid || (errors && errors.hasErrors())) {
+                if (errors && errors.hasErrors()) {
+                    showErrorText(errors.build());
+                }
+                toggleBtnLoading(false);
+                return stopEvent(event);
+            }
+
+            var data;
+            if (valid instanceof FormData) data = valid;
+            else {
+                data = new FormData(options.form);
+            }
+
+            if (options.dropzone)
+                extractFilesFromDropzone(data, options.dropzone);
+
+            if (extraFormData) {
+                for (var i = 0; i < extraFormData.length; i++) {
+                    var obj = extraFormData[i];
+                    data.append(obj.key, obj.value);
+                }
+            }
+
+            $.ajax({
+                url: options.form.action,
+                method: options.form.method,
+                data: data,
+                processData: false,
+                contentType: false,
+                success: handleSuccess,
+                error: handleError,
+                complete: handleComplete,
+                dataType: "json"
+            });
+
+            return stopEvent(event);           
+        }
+
+        var extraFormData;
+        function validateEverything() {
+            var executeParalelOnSubmitFunction = false;
+            if (options.paralelOnSubmitFunction) {
+                executeParalelOnSubmitFunction = options.paralelOnSubmitFunction;
+            }
+
+            if (options.disableValidation) {
+                if (executeParalelOnSubmitFunction) {
+                    options.onSubmit();
+                }
+                return;
+            }
+
+            var errors = createErrorMessage();
+
+            var extraData = [];
+            //Partial Views
+            try {
+                if (window.AlteracaoDadosCadastrais) {
+                    var alteracaoDados = AlteracaoDadosCadastrais.validate(errors);
+                    if (alteracaoDados) {
+                        Array.prototype.push.apply(extraData, alteracaoDados);
+                    }
+                }
+
+                if (window.InformacoesSobreDebitos) {
+                    if (!InformacoesSobreDebitos.valid) {
+                        errors.add(InformacoesSobreDebitos.errorMessage);
+                    }
+                }
+
+                if (window.TabelaEquipamentosEletricos) {
+                    if (!TabelaEquipamentosEletricos.valid) {
+                        errors.add(TabelaEquipamentosEletricos.errorMessage);
+                    } else {
+                        Array.prototype.push.apply(extraData, TabelaEquipamentosEletricos.getData());
+                    }
+                }
+            } catch (e) { }
+
+            try {
+                ValidationHelper.checkRequiredElements(options.form, errors, options.preventDuplicateMessages);
+            } catch (e) {
+                console.log(e);
+                errors.add("Erro de Validação. Verifique o log.");
+            }
+            
+            if (options.dropzone) {
+                var isRequired;
+                
+                if (typeof options.dropzoneRequired === "function") {
+                    isRequired = options.dropzoneRequired();
+                } else {
+                    isRequired = options.dropzoneRequired;
+                }
+                var isRequiredAndIsVoid = isRequired && options.dropzone.getFiles().length === 0;
+                if (isRequiredAndIsVoid && !options.customMsgDropzone) {
+                    errors.add("É obrigatório adicionar pelo menos um arquivo");
+                } else if (isRequiredAndIsVoid && options.customMsgDropzone) {
+                    errors.add(options.customMsgDropzone);
+                }
+            }
+
+            if (window.context.logado == false) {
+                try {
+                    if (grecaptcha.getResponse().length === 0) {
+                        errors.add('É necessário clicar em "Não sou um robô".');
+                    }
+                } catch (error) { console.log('FormController ReCaptcha Error:', error); }
+            }
+
+            if (executeParalelOnSubmitFunction) {
+                options.onSubmit();
+            }
+
+            extraFormData = extraData;
+        }
+
+        function toggleBtnLoading(loading) {
+            
+            if (btnLoading) {
+                if (loading) {
+                    btnLoading.disabled = true;
+                    btnLoading.classList.add("btnLoader");
+                } else {
+                    btnLoading.disabled = false;
+                    btnLoading.classList.remove("btnLoader");
+                }
+            }
+        }
+
+        function handleComplete(jqXHR, textStatus) {
+            toggleBtnLoading(false);
+            if (options.validateRecaptcha) try { grecaptcha.reset(); } catch (error) { console.log(error);}
+            if (options.complete) options.complete(jqXHR, textStatus);
+        }
+
+        function showSuccessText(text) {
+            if (msgInfo) {
+                msgInfo.innerHTML = text;
+            }
+            msgInfo.classList.remove("hide");
+            msgInfo.classList.add("success");
+            msgInfo.classList.add("fade");
+            msgInfo.classList.add("show");
+            $('html, body').animate({
+                scrollTop: msgInfo.offsetTop
+            }, 1000);
+        }
+
+        var defaultTitle = "<div class=\"bold\" style=\"text-align: center;\">Dados enviados com sucesso!</div><br><br>";
+        var defaultMessage = "Em breve um de nossos atendentes entrará em contato com você para dar andamento à sua solicitação. ";
+        var defaultGoodbye = "<br><br>Obrigado por utilizar a Agência Virtual!";
+
+        function handleSuccess(data, textStatus, jqXHR) {
+            if (data.error) {
+                return handleError(data, textStatus, jqXHR);
+            }
+            var text;
+            if (options.handleMsgInfo) {
+
+                if (data.customMessage) {
+                    text = defaultTitle + defaultMessage + data.customMessage + defaultGoodbye;
+                } else if (data.defaultMessage) {
+                    text = defaultTitle + defaultMessage + defaultGoodbye;
+                } else if (data.successText) {
+
+                    if (data.successText instanceof Array) {
+
+                        if (data.titleIncluded) {
+                            text = '<div class="bold" style="text-align: center;">' + data.successText[0] + '</div><br>';
+                            data.successText.splice(0, 1);
+                        } else {
+                            text = defaultTitle;
+                        }
+
+                        text += '<div style="text-align: center">';
+                        text += data.successText.join("<br><br>");
+                        text += '</div>';
+                    } else
+                        text = data.successText;
+                }
+
+                showSuccessText(text);
+            }
+
+            if (options.resetFormOnSuccess) {
+                options.form.reset();
+            }
+
+            if (options.dropzone && options.clearDropzoneOnSuccess) {
+                options.dropzone.clear();
+            }
+
+            if (options.hideFormOnSuccess) {
+                var children = options.form.children;
+                for (var i = 0; i < children.length; i++) {
+                    var el = children[i];
+                    if (el.id === "areaBotoesEnviar") continue;
+                    el.style.display = "none";
+                }
+
+                var h2s = document.querySelectorAll("h2");
+
+                for (var i = 0; i < h2s.length; i++) {
+                    var el = h2s[i];
+                    if (el.innerHTML.indexOf("*Campos obrigatórios") !== -1 ||
+                        el.innerHTML.indexOf("* Campos obrigatórios") !== -1) {
+                        el.style.display = "none";
+                        break;
+                    }
+                }
+
+                btnLoading.style.display = "none";
+
+                var areaRecaptcha = document.querySelector(".g-recaptcha");
+                if (areaRecaptcha) {
+                    areaRecaptcha.style.display = "none";
+                }
+
+            } else if (options.hideOnSuccess) {
+                btnLoading.style.display = "none";
+                var h2s = document.querySelectorAll("h2");
+                
+                for (var i = 0; i < h2s.length; i++) {
+                    var el = h2s[i];
+                    if (el.innerHTML.indexOf("*Campos obrigatórios") !== -1 ||
+                        el.innerHTML.indexOf("* Campos obrigatórios") !== -1) {
+                        el.style.display = "none";
+                        break;
+                    }
+                }
+
+                var captcha = document.querySelector(".g-recaptcha");
+                if (captcha) {
+                    captcha.style.display = "none";
+                }
+
+                options.hideOnSuccess.hide();
+            }
+
+            if (typeof options.success === "function") {
+                return options.success(data, textStatus, jqXHR);
+            }
+
+        }
+
+        function clearMsgInfo() {
+            if (msgInfo) {
+                msgInfo.innerHTML = "";
+                msgInfo.classList.remove("success");
+                msgInfo.classList.remove("show");
+                msgInfo.classList.remove("fade");
+                msgInfo.classList.remove("error");
+                msgInfo.classList.add("hide");
+            }
+        }
+
+        function showErrorText(text) {
+            if (msgInfo) {
+                msgInfo.innerHTML = text;
+                msgInfo.classList.remove("hide");
+                msgInfo.classList.add("error");
+                msgInfo.classList.add("fade");
+                msgInfo.classList.add("show");
+                $('html, body').animate({
+                    scrollTop: 0
+                }, 1000);
+            }
+        }
+
+        function handleError(data, textStatus, jqXHR) {
+            if (options.handleMsgInfo) {
+
+                var errorText = data.errorMessage || (data.errorMessages != undefined ? data.errorMessages.join("<br>") : "Action Not Found");
+
+                if (options.moreInfo) {
+                    errorText += '<br>' +
+                                 'Para mais informações, entre em contato com a Light através do Clique-Light ou <a href="' + window.rootPath + "FaleConosco" +'" class="link">Fale Conosco</a>.';
+                }
+                
+                showErrorText(errorText);
+            }
+            if (typeof options.error === "function") {
+                options.error(data, textStatus, jqXHR);
+            }
+        }
+
+        function getErrorMessage() {
+            if (!errors) return createErrorMessage();
+            return errors;
+        }
+
+        function createErrorMessage() {
+            errors = new ErrorMessage();
+            errors.errorClass = "invalid";
+            return errors;
+        }
+
+        function extractFilesFromDropzone(formData, dropzone) {
+            var files = dropzone.getFiles();
+            for (var i = 0; i < files.length; i++) {
+                formData.append(dropzone.getFileName() + i, files[i]);
+            }
+        }
+
+    }
+
+    FormController.start = function (options) {
+        return new FormController(options);
+    }
+
+    return FormController;
+
+    function stopEvent(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+    }
+
+    function returnTrue() { return true; }
+})(jQuery, ErrorMessage);

@@ -1,0 +1,84 @@
+﻿var InstalacaoSearchHelper = (function () {
+    'use strict';
+    
+    return InstalacaoSearch;
+    
+    function InstalacaoSearch(options) {
+        var onSuccess, onError;
+
+        if (typeof options.onSuccess === "function") onSuccess = options.onSuccess;
+        else throw new Error("A opção onSuccess deve ser uma function!");
+
+        if (typeof options.onError === "function" || typeof options.onError === "undefined") onError = options.onError;
+        else throw new Error("A opção onError deve ser uma function!");
+
+        this.onSuccess = function (value) {
+            if (value !== undefined) {
+                onSuccess = value;
+            }
+        }
+        
+        this.pn = getPnFromCookie;
+        this.buscarInstalacoesVinculadas = buscarInstalacoesVinculadas;
+        this.buscarInstalacoesDesvinculadas= buscarInstalacoesDesvinculadas;
+        this.buscarInstalacaoVinculada= buscarInstalacaoVinculada;
+        this.buscarInstalacaoDesvinculada= buscarInstalacaoDesvinculada;
+        this.buscarInstalacao = buscarInstalacao;       
+
+        function buscarInstalacoesVinculadas(pn, cpf) {
+            var queryPn = queryParamPn(pn);
+            ajaxPattern(window.rootPath + "InstalacaoSearcher/GetInstalacoesVinculadas", !cpf ? queryPn : customQueryParam(queryPn, "&cpf="+cpf));
+        }
+
+        function buscarInstalacoesDesvinculadas(pn, cpf) {
+            ajaxPattern(window.rootPath + "InstalacaoSearcher/GetInstalacoesDesvinculadas", queryParamPn(pn));
+        }
+
+        function buscarInstalacaoVinculada(numInstalacao) {
+            ajaxPattern(window.rootPath + "InstalacaoSearcher/GetInstalacaoVinculada", queryParam(numInstalacao));
+        }
+
+        function buscarInstalacaoDesvinculada(numInstalacao, pn) {
+            ajaxPattern(window.rootPath + "InstalacaoSearcher/GetInstalacaoDesvinculada", queryParam(numInstalacao));
+        }
+
+        function buscarInstalacao(numInstalacao) {
+            ajaxPattern(window.rootPath + "InstalacaoSearcher/GetInstalacaoByNumInstalacao", queryParamInst(numInstalacao));
+        }
+
+        function buscarInstalacaoPn(numInstalacao) {
+            ajaxPattern(window.rootPath + "InstalacaoSearcher/GetInstalacaoByNumInstalacaoPn", queryParam(numInstalacao));
+        }
+
+        function queryParamPn(pn) {
+            return "?pn=" + (pn == null ? getPnFromCookie() : pn);
+        }
+
+        function queryParamInst(numInstalacao) {
+            return "?numInstalacao=" + numInstalacao;
+        }
+
+        function queryParam(numInstalacao) {
+            return "?numInstalacao=" + numInstalacao + "&pn=" + getPnFromCookie();
+        }
+        
+        function customQueryParam(queryParam, queryParam2) {
+            return queryParam + queryParam2;
+        }
+
+        function ajaxPattern(url, query) {
+            var formatUrl = url + (query != null ? query : "");
+            $.ajax({
+                url: formatUrl ,
+                success: onSuccess || noop,
+                error: onError || noop,
+                dataType: 'json'
+            });
+        }
+
+        function getPnFromCookie() {
+            return getCookie("acessoGC").split("|")[0];
+        }
+    }
+
+})();

@@ -1,0 +1,127 @@
+﻿(function () {
+    'use strict';
+
+    //ajax no cache for ie 10
+    window.addEventListener("load", function () {
+        $.ajaxSetup({
+            cache: false
+        });
+    });
+
+
+    // ---------------- Transformação da barra de topo para o Scroll ---------------------------
+    var topo = document.querySelector(".topo");
+    window.addEventListener("scroll", function () {
+        if (window.scrollY > 100) {
+            topo.classList.add("small");
+        } else {
+            topo.classList.remove("small");
+        }
+    });
+
+    // ----------------------------------- Links para Home -----------------------------------
+    addEvent(".home-link", "click", function () {
+        window.location.pathname = window.rootPath;
+    });
+
+    // ----------------------------------- Botões de voltar ----------------------------------
+    addEvent(".btn-back", "click", back);
+
+    // ------------------------------------ Menu lateral -------------------------------------
+    if (window.context.instalacaoSelecionada) {
+        var menuAtivo = false;
+        var btnMenu = document.querySelector("#ativaMenu");
+        var menuLateral = document.querySelector(".menuLateral");
+
+        btnMenu.addEventListener("click", function () {
+            if (!menuAtivo) {
+                menuLateral.classList.add("open");
+                btnMenu.classList.add("is-active");
+                menuAtivo = true;
+                return false;
+            } else {
+                menuLateral.classList.remove("open");
+                btnMenu.classList.remove("is-active");
+                menuAtivo = false;
+            }
+        });
+    }
+
+    // ------------------------------------ Dropdown ----------------------------------------
+    
+    var ativaDropdown = document.querySelector("#ativaDropdown");
+
+    if (ativaDropdown) {
+        var topoDropdown = document.querySelector(".topoDropdown");
+
+        ativaDropdown.addEventListener("click", function () {
+            topoDropdown.style.display = "";
+            topoDropdown.classList.add("show");
+        });
+
+        topoDropdown.addEventListener("mouseleave", function () {
+            topoDropdown.classList.remove("show");
+        });        
+
+        document.querySelector("#btnConf").addEventListener("click", function () {
+            if (getCookie("isAssociado") == "True") {
+                window.location.href = window.rootPath + "Configuracao";
+            } else {
+                performConfig();
+            }            
+        });
+        document.querySelector("#btnSair").addEventListener("click", performLogout);
+    }
+
+    // --------------------------------- Botão de Ajuda -------------------------------------v
+    var modalAjuda = new ModalController({
+        overlayId: "modal-ajuda"
+    });
+    addEvent(".ajuda", "click", function () {
+        if (window.urlAjuda) {
+            modalAjuda.showLoader();
+            $.ajax({
+                url: window.rootPath + window.urlAjuda,
+                method: 'GET',
+                success: modalAjuda.setContent,
+                error: modalAjuda.close
+            });
+        }
+    });
+
+})();
+
+function back() {
+    if (history.length >= 2) {
+        window.history.back();
+    } else {
+        window.close(); 
+    }
+}
+
+function addEvent(selector, eventName, callback) {
+    var elements = document.querySelectorAll(selector);
+    if (elements) {
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].addEventListener(eventName, callback);
+        }
+    }
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
+
+function noop() { }

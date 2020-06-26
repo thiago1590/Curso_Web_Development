@@ -1,0 +1,680 @@
+﻿var ValidationHelper = (function () {
+    'use strict';
+
+    /**
+     * -> Sobre:
+     *    Objeto para gerenciar e lidar com validações comuns de campos.
+     *    Ex.: ValidationHelper.onlyNumbers("#id_do_input", "#id_do_elemento_de_erro");
+     * 
+     * -> OBS.:
+     *    Os argumentos padrão para a maioria dos métodos são:
+     *    input -> elemento jQuery ou string com o seletor para um input.
+     *    error -> um objeto jQuery ou seletor cujo html será alterado com o texto do erro, ou uma função de callback
+     *                              que recebe como único parametro a mensagem de erro. Caso não seja passado, assumirá que existe um 
+     *                              elemento com id "erro_ID_DO_INPUT" e usará ele.
+     * 
+     * -> Métodos: 
+     *   .onlyNumbers(input) -> Impede a entrada de caracteres não numéricos
+     *   .formataCpfCnpj(input) -> Força o formato apropriado (para campos que podem ser inserido um cpf ou cnpj)
+     *   .validarCpf(input, error) -> Valida o valor no input no evento de blur. O texto será colocado no errorElement.
+     *   .validarCnpj(input, error) -> Mesma coisa que o validarCpf, porém com as regras para CNPJ.
+     *   .telefone(input) -> Formata com parenteses, DDD e 8 dígitos.
+     *   .celular(input) -> Formata com parenteses, DDD e 9 dígitos.
+     *   .validarTelefone(input, error) -> valida o telefone no evento blur
+     *   .validarCelular(input, error) -> valida o celular no evento blur
+     *   .validarEmail(input, error) -> validar o email no evento blur
+     *   .cep(input) -> formato de cep
+     *   .data(input, blockFutureDate : boolean) -> formata data, impedindo datas inválidas
+     *   .leituraMedidor(input) -> formato "9,9,9,9,9" para leitura de medidores de energia
+     *   .formataCpf(input) -> força o formato apropriado
+     */ 
+
+    var keypress = "keypress";
+    var blur = "blur";
+
+    return {
+        onlyNumbers: onlyNumbersKeypress,
+        formataCpfCnpj: formataCpfCnpjKeypress,
+        validarCpf: validarCpfBlur,
+        validarCnpj: validarCnpjBlur,
+        telefone: telefoneMaskKeypress,
+        celular: celularMaskKeypress,
+        telefoneOuCelular: telefoneOuCelularMask,
+        validarTelefone: validarTelefoneBlur,
+        validarCelular: validarCelularBlur,
+        validarTelefoneOuCelular: validarTelefoneOuCelularBlur,
+        validarEmail: validarEmailBlur,
+        validarData: validarDataBlur,
+        cep: cepMaskKeypress,
+        textAreaLimit: textAreaLimitMask,
+        data: dateMaskEvents,
+        leituraMedidor: leituraMedidorEvents,
+        horaMinuto: horaMinutoEvents,
+        equals: equals,
+        formataCPF: formataCpfKeypress,
+        formataCNPJ: formataCnpjKeypress,
+        checkRequiredElements : checkRequiredElements,
+        checkElementsWithValidation: checkElementsWithValidation,
+        limite: limiteLength,
+        validarPn: validarPnBlur,
+        onlyLetters: onlyLettersKeyPress
+    }
+
+    function telefoneOuCelularMask(input) {
+        input = checkElement(input);
+        input.attr("maxlength", 15);
+        input[0].addEventListener("keyup", function (event) {
+            return telefoneOuCelularKeyup(this, event);
+        });
+        input.on(keypress, telefoneOuCelularKeypress);
+    }
+
+    function checkElementsWithValidation(form, errors) {
+        var elements = form.querySelectorAll("span.input-error:not([disabled])");
+
+        for (var i = 0; i < elements.length; i++) {
+            var el = elements[i];
+            if (!el.innerHTML) continue;
+
+            var validationMessage = el.innerHTML;
+            var input = el.parentNode.parentNode.querySelector("input");
+            if (input.disabled) continue;
+            if (validationMessage) {
+                errors.add(validationMessage);
+                input.classList.add("invalid");
+            } else {
+                input.classList.remove("invalid");
+            }
+        }
+    }
+
+    function inputName(label, el) {
+        if (!label) throw new Error("No label found for element with id " + el.id + " and name " + el.name + ".");
+
+        var text = label.innerHTML.replace("*", "");
+        while (text.endsWith(" ")) {
+            text = text.substring(0, text.length - 1);
+        }
+
+        var tagIndex = text.indexOf("<");
+        if (tagIndex !== -1) {
+            text = text.substring(0, tagIndex);
+        }
+
+        return text;
+    }
+
+    function checkRequiredElements(form, errors, preventDuplicate) {
+        //var elements = form.querySelectorAll("[required]:not([disabled]):not(.ignore-required)");
+        var inputs = "input:not([disabled]):not(.ignore-required)";
+        var textarea = "textarea:not([disabled]):not(.ignore-required)";
+        var selects = "select:not([disabled]):not(.ignore-required)";
+        var dropzone = "[validatedropzone]:visible:not([disabled]):not(.ignore-required)";
+        var elements = $(inputs + ", " + textarea + ", " + selects + ", " + dropzone);
+
+        var radiosValidated = [];
+
+        for (var i = 0; i < elements.length; i++) {
+            var el = elements[i];
+            var message = "", label = undefined;
+
+            switch (el.type) {
+                case "radio":
+                    if (radiosValidated.indexOf(el.name) !== -1) break;
+
+                    var radios = form.querySelectorAll('input[name="' + el.name + '"]');
+
+                    var checked = false;
+                    for (var j = 0; j < radios.length; j++) {
+                        if (radios[j].checked) {
+                            checked = true; break;
+                        }
+                    }
+
+                    if (!checked && el.required) {
+                        label = form.querySelector('label[for="' + el.name + '"]');
+                        message = "Marque uma das opções de " + inputName(label, el) + ".";
+                        addClassChangesToInvalidRadios(radios);
+                    }
+
+                    radiosValidated.push(el.name);
+
+                    break;
+                default:
+                    label = form.querySelector('label[for="' + el.id + '"]');
+                    if (!el.value && el.required) {
+                        if (el.classList.contains("camposObrigatorios")) {
+                            message = "Um dos campos de " + inputName(label, el) + " deve ser preenchido.";
+                        }
+                        else {
+                            message = "O campo " + inputName(label, el) + " deve ser preenchido.";
+                        }
+                        addClassChangesToInvalidInput(el);
+                    }
+                    if (el.value && el.attributes.validate) {
+                        if(label){
+                            var spanLabel = label.querySelector("span");
+                            if (spanLabel && spanLabel.innerHTML != "") {
+                                message = spanLabel.innerHTML;
+                            }
+                        }
+                        
+                    }
+                    if (el.attributes.validatedropzone &&
+                        !el.querySelector("tr")) {
+                        if (!el.title) {
+                            message = "É obrigatório adicionar pelo menos um arquivo.";
+                        } else {
+                            message = "É obrigatório anexar " + el.title + ".";
+                        }
+                        
+                    }
+                    break;
+            }
+
+            if (message) {
+                if (preventDuplicate) {
+                    var currentErros = errors.build();
+                    if (currentErros.indexOf(message) === -1) {
+                        errors.add(message);
+                    }
+                } else {
+                    errors.add(message);
+                }
+            }
+        }
+    }
+
+    function addClassChangesToInvalidRadios(radios) {
+        function removeInvalidClass(event) {
+            if (this.checked) {
+                for (var i = 0; i < radios.length; i++) {
+                    var radio = radios[i];
+                    radio.classList.remove("invalid");
+                    radio.parentNode.classList.remove("invalid");
+                    radio.removeEventListener("change", removeInvalidClass);
+                }
+            }
+        }
+
+        for (var i = 0; i < radios.length; i++) {
+            var radio = radios[i];
+            radio.classList.add("invalid");
+            radio.parentNode.classList.add("invalid");
+            radio.addEventListener("change", removeInvalidClass);
+        }
+
+    }
+
+    function addClassChangesToInvalidInput(el) {
+        function removeInvalidClass() {
+            if (el.value) {
+                el.classList.remove("invalid");
+                el.removeEventListener("blur", removeInvalidClass);
+            }
+        };
+
+        el.classList.add("invalid");
+        el.addEventListener("blur", removeInvalidClass)
+    }
+
+
+
+    // <------------------------ Funções utilitárias separadas do prototype ------------------------------->
+    function onlyNumbersKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, returnOnlyNumbers);
+    }
+
+    function formataCpfCnpjKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, returnFormataCpfCnpj);
+        input.attr("maxlength", 18);
+    }
+
+    function formataCpfKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, returnFormataCpf);
+        input.attr("maxlength", 14);
+    }
+
+    function formataCnpjKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, returnFormataCnpj);
+        input.attr("maxlength", 18);
+    }
+
+    function validarCpfBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validarCpfCnpj(error, true));
+    }
+
+    function validarCnpjBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validarCpfCnpj(error, false));
+    }
+
+    function telefoneMaskKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, telephoneMask);
+        input.on("paste", function (e) {
+            var copyText = e.originalEvent.clipboardData.getData('text');
+            var nonNumbers = /\D/;
+            if (nonNumbers.test(copyText)) {
+
+                return false;
+            }
+        });
+        input.attr("maxlength", 14);
+    }
+
+    function celularMaskKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, cellphoneMask);
+        input.attr("maxlength", 15);
+        input.on("paste", function (e) {
+            var copyText = e.originalEvent.clipboardData.getData('text');
+            var nonNumbers = /\D/;
+            if (nonNumbers.test(copyText)) {
+
+                return false;
+            }
+        });
+    }
+
+    function validarTelefoneOuCelularBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validacaoTelefone(error, [10, 11]));
+    }
+
+    function validarTelefoneBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validacaoTelefone(error, 10));
+    }
+
+    function validarCelularBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validacaoTelefone(error, 11));
+    }
+
+    function validarEmailBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validacaoEmail(input, error));
+    }
+
+    function validarDataBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validacaoData(input, error));
+    }
+
+    function validarCepBlur(input, error) {
+        input = checkElement(input);
+        error = checkElement(error, input);
+        input.on(blur, validarCep(error, 9));
+    }
+
+
+
+    function cepMaskKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, cepMask);
+        input.on("paste", function (e) {
+        var copyText = e.originalEvent.clipboardData.getData('text');
+        var nonNumbers = /\D/;
+        if (nonNumbers.test(copyText)) {
+                
+            return false;
+        }
+    });
+        input.attr("maxlength", 9);
+    }
+
+    function textAreaLimitMask(input, limit) {
+        input = checkElement(input);
+        var mascara = function textAreaLimit() {
+            textAreaLimit(this.id, limit);
+        }
+        input.on("keyup", mascara).on(keypress, mascara);
+    }
+
+    function validacaoEmail(input, error) {
+        var element = typeof error === "object" ? error : false;
+        var callback = typeof error === "function" ? error : false;
+        if (callback) {
+            return function () {
+                validaEmail(this, this.value, callback);
+            };
+        } else if (element) {
+            return function () {
+                validaEmail(this, this.value, function (msg) { fadeInError(element, msg); });
+            };
+        }
+    }
+
+    function validacaoData(input, error) {
+        var element = typeof error === "object" ? error : false;
+        var callback = typeof error === "function" ? error : false;
+        if (callback) {
+            return function () {
+                validaData(this, this.value, callback);
+            };
+        } else if (element) {
+            return function () {
+                validaData(this, this.value, function (msg) { fadeInError(element, msg); });
+            };
+        }
+    }
+
+    function fadeInError(el, msg) {
+        if (!msg) el.fadeOut(300, function () { el.html(""); });
+        else {
+            el.html(msg); el.fadeIn(300);
+        }
+    }
+
+    function validarCpfCnpj(error, isCpf) {
+        var element = typeof error === "object" ? error : false;
+        var callback = typeof error === "function" ? error : false;
+
+        if (callback) {
+            return function () {
+                validaCpfCnpj(this, this.value, callback, isCpf);
+            };
+        } else if (element) {
+            return function () {
+                validaCpfCnpj(this, this.value, function (msg) {
+                    if (msg)
+                        fadeInError(element, msg);
+                    else {
+                        element.removeClass("invalid");
+                        fadeInError(element, "");
+                        return true;
+                    }
+                }, isCpf);
+            };
+        }
+    }
+
+
+    function checkElement(el, input) {
+        if (typeof el === "function") return;
+        if (typeof el === "string") return $(el); //assume que é um selector
+        if (input && el === undefined) return $("#erro_" + input.attr("id"));
+        return el;
+    }
+
+    function returnOnlyNumbers(event) {
+        return onlyNumbers(this, event);
+    }
+
+    function returnFormataCpfCnpj(event) {
+        return formataCPFCNPJ(this, event)
+    }
+
+    function returnFormataCpf(event) {
+        return formataCPF(this, event)
+    }
+
+    function returnFormataCnpj(event) {
+        return formataCNPJ(this, event)
+    }
+
+    function cepMask(event) {
+        return mask(this, '99999-999', event);
+    }
+
+    function telephoneMask(event) {
+        return mask(this, '(99) 9999-9999', event);
+    }
+
+    function cellphoneMask(event) {
+        return mask(this, '(99) 99999-9999', event);
+    }
+
+    function validacaoTelefone(error, size) {
+        var element = typeof error === "object" ? error : false;
+        var callback = typeof error === "function" ? error : false;
+
+        if (callback) {
+            return function () {
+                validarTelefone(this, this.value, size, callback);
+            };
+        } else if (element) {
+            return function () {
+                validarTelefone(this, this.value, size, function (msg) {
+                    fadeInError(element, msg);
+                });
+            };
+        }
+    }
+   
+    function dateMaskEvents(input, blockFutureDates) {
+        input = checkElement(input);
+        input.attr("maxlength", 10);
+
+        var errorElement = checkElement(undefined, input);
+
+        input.on(keypress, function (event) {
+            return dateMask(this, event);
+        });
+
+        input.on(blur, function (event) {
+            var hasError = false;
+            var data = input.val();
+
+            if (data.length === 0) return;
+
+            if (data.length < 10) {
+                fadeInError(errorElement, "Termine de preencher a data.");
+                hasError = true;
+            } else {
+                data = data.split("/");
+                if (blockFutureDates) {
+                    var erroDataFutura = "Data inválida.";
+
+                    var diaInput = data[0], mesInput = data[1], anoInput = data[2];
+                                        
+                    var now = new Date();
+
+                    if (anoInput > now.getFullYear()) {
+                        fadeInError(errorElement, erroDataFutura);
+                        hasError = true;
+                    } else if (anoInput == now.getFullYear()) {
+                        if (mesInput > now.getMonth() + 1) {
+                            fadeInError(errorElement, erroDataFutura);
+                            hasError = true;
+                        } else if (mesInput == now.getMonth() + 1) {
+                            if (diaInput > now.getDate()) {
+                                fadeInError(errorElement, erroDataFutura);
+                                hasError = true;
+                            }
+                        }
+                    }
+                }
+
+                if(dataInvalida(data)){
+                    fadeInError(errorElement, "Data inválida.");
+                    hasError = true;
+                }                
+                
+            }
+
+            if (!hasError) {
+                input.removeClass("invalid");
+                fadeInError(errorElement, "");
+            }
+
+        });
+
+        preventArrowsOnInput(input);
+    }
+
+    function leituraMedidorEvents(input) {
+        input = checkElement(input);
+        input.on(keypress, function (event) {
+            return leituraMedidorKeyup(this, event);
+        });
+        input.on("input", function (event) {
+            return leituraMedidorInput(this, event);
+        });
+        input.attr("maxlength", 15);
+//        preventArrowsOnInput(input);
+    }
+
+    function horaMinutoEvents(input) {
+        input = checkElement(input);
+        input.attr("maxlength", 5);
+        input.on(keypress, function (event) {
+            return horaMinutoMask(this, event);
+        });
+        input.on(blur, function (event) {
+            return validaHoraMinuto(input, event);
+        });
+        preventArrowsOnInput(input);
+    }
+
+    function preventArrowsOnInput(input) {
+        input = checkElement(input);
+        input.on("keydown", function (event) {
+            return preventArrows(event);
+        });
+    }
+
+    function equals(input1, input2, msgError) {
+        input1 = checkElement(input1);
+        input2 = checkElement(input2);
+
+        var elementError = checkElement(undefined, input2);
+        
+        input2.on(blur, function () {
+            if (!compare(input1, input2)) {
+                fadeInError(elementError, msgError);
+            } else {
+                fadeInError(elementError, "");
+            }
+        });            
+    }
+
+    function formataCPFKeypress(input) {
+        input = checkElement(input);
+        input.on(keypress, returnFormataCPF);
+    }
+
+    function returnFormataCPF() {
+        return formataCPF(this, event);
+    }
+
+    function limiteLength(element, maxlength) {
+        element = checkElement(element);
+
+        if (maxlength)
+            element.attr("maxlength", maxlength);
+        else {
+            maxlength = element.attr("maxlength");
+        }
+
+        element.on(blur, function (event) {
+            var val = element.val();
+            if (val.length > maxlength); {
+                element.val(val.substring(0, maxlength));
+            }
+        });
+        /*
+        element.on("paste", function (event) {
+            var clipboard = event.clipboardData;
+            var value = clipboard.getData("Text");
+
+            if (value.length > maxlength) {
+                event.stopPropagation();
+                event.preventDefault();
+                element.val(value.substring(0, maxlength));
+            }
+        });*/
+
+    }
+
+    function TruncaExcedente(elem, maxLen) {
+        var str = elem.value;
+
+        if (str.length > maxLen) {
+            str = str.substring(0, maxLen);
+            elem.value = str;
+        }
+    }
+
+    function dataInvalida(data) {
+        var day = parseInt(data[0], 10);
+        var month = parseInt(data[1], 10);
+        var year = parseInt(data[2], 10);
+        var monthLength = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        var anoBisexto = false;
+
+        if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)) {
+            monthLength[1] = 29;
+            anoBisexto = true;
+        }       
+
+        if (anoBisexto && day > 29)
+            return true;
+
+        if ((year < 1000 || month == 0 || month > 12)) {
+            return true;
+        }
+
+        return false;
+    };
+
+    function validaHoraMinuto(input, event) {
+        input = checkElement(input);
+        var value = input.val();
+        var res = value.split(":");
+        var hr = parseInt(res[0]);
+        var min = parseInt(res[1]);
+        var errorElement = checkElement(undefined, input);
+        if (value.length < 5 && value.length > 0) {
+            fadeInError(errorElement, "Termine de preencher a hora.");
+            return false;
+        }
+        else {
+            input.removeClass("invalid");
+            fadeInError(errorElement, "");
+            return true;
+        }
+    }
+
+    function validarPnBlur(input, event) {
+        input = checkElement(input);
+        var errorElement = checkElement(undefined, input);
+        input.on(blur, function () {
+            var isValid = true;
+            if (input.val()) {
+                if (input.val().length < 8 || input.val().length > 10) {
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) {
+                fadeInError(errorElement, "Código do cliente inválido.");
+            } else {
+                input.removeClass("invalid");
+                fadeInError(errorElement, "");
+            }    
+        });
+    }
+
+    function onlyLettersKeyPress(input) {
+        input = checkElement(input);
+        input.on(keypress, function (event) {
+            console.log(key);
+            return !((key >= 48 && key <= 57));
+        });                
+    }
+
+})();

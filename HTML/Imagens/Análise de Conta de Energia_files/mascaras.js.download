@@ -1,0 +1,439 @@
+﻿//----------------------------------------------------------------------------------------------
+// Exemplo de uso
+// onkeypress="return txtBoxFormat(this, \'99999-999\', event);">
+
+// Exemplo de outros dados
+// CEP -> '99999-999'
+// CPF -> 999.999.999-99
+// CNPJ -> 99.999.999/9999-99
+// Data -> 99/99/9999
+// Tel Resid -> (99) 999-9999
+// Tel Cel -> (99) 9999-9999
+// Processo -> 99.999999999/999-99
+// C/C -> 999999-! 
+//---------------------------------------------------------------------------------------------- 	
+
+function mask(element, sMask, evtKeyPress) {
+    var i, nCount, sValue, fldLen, mskLen, bolMask, sCod, nTecla;
+
+    if (document.all) { // Internet Explorer
+        nTecla = evtKeyPress.keyCode;
+    }
+    else {
+        //if(document.layers) { // Nestcape
+        nTecla = evtKeyPress.which;
+    }
+
+    sValue = element.value;
+
+    sValue = sValue.toString().replace("-", "");
+    sValue = sValue.toString().replace("-", "");
+    sValue = sValue.toString().replace(".", "");
+    sValue = sValue.toString().replace(".", "");
+    sValue = sValue.toString().replace("/", "");
+    sValue = sValue.toString().replace("/", "");
+    sValue = sValue.toString().replace("(", "");
+    sValue = sValue.toString().replace("(", "");
+    sValue = sValue.toString().replace(")", "");
+    sValue = sValue.toString().replace(")", "");
+    sValue = sValue.toString().replace(":", "");
+    sValue = sValue.toString().replace(":", "");
+    sValue = sValue.toString().replace(" ", "");
+    sValue = sValue.toString().replace(" ", "");
+
+    fldLen = sValue.length;
+    mskLen = sMask.length;
+
+    i = 0;
+    nCount = 0;
+    sCod = "";
+    mskLen = fldLen;
+
+    // Caso seja pressionado backspace, ent?o ignora a verifica??o da m?scara
+    if (nTecla != 8) {
+        while (i <= mskLen) {
+            bolMask = ((sMask.charAt(i) == "-") || (sMask.charAt(i) == ".") || (sMask.charAt(i) == "/") || (sMask.charAt(i) == ":"))
+            bolMask = bolMask || ((sMask.charAt(i) == "(") || (sMask.charAt(i) == ")") || (sMask.charAt(i) == " "))
+
+            if (bolMask) {
+                sCod += sMask.charAt(i);
+                mskLen++;
+            } else {
+                sCod += sValue.charAt(nCount);
+                nCount++;
+            }
+            i++;
+        }
+
+        element.value = sCod;
+
+    }
+    if (nTecla != 8) { // backspace
+        if (sMask.charAt(i - 1) == "9") { // apenas n?meros...
+            return ((nTecla > 47) && (nTecla < 58));
+        } // n?meros de 0 a 9
+        else { // qualquer caracter...
+            return true;
+        }
+    } else {
+        return true;
+    }
+}
+
+function onlyNumbers(obj, e) {
+    var lineaux = "";
+    if (navigator.userAgent.indexOf("IE") != -1) {
+        var keypress = window.event.keyCode;
+        if (keypress >= 48 && keypress < 58) {
+            event.returnValue = true;
+        } else
+            event.returnValue = false;
+    } else {
+        lineaux = obj.value;
+        var keypress = e.which;
+        if ((keypress >= 48 && keypress < 58) || (keypress == 0 || keypress == 8) || keypress == 9) {
+            return true;
+        } else if (keypress == 0) {
+            return true;
+        } else
+            return false;
+    }
+}
+
+function formataCPFCNPJ(elemento, event) {
+    
+    if (elemento.value.length <= 14) {
+        return mask(elemento,'999.999.999-99' , event);
+    }
+    else {
+        return mask(elemento,'99.999.999/9999-99',event);
+    }
+}
+
+function formataCPF(elemento, event) {
+    if (elemento.value.length <= 14) {
+        return mask(elemento, '999.999.999-99', event);
+    }
+}
+
+function formataCNPJ(elemento, event) {
+    if (elemento.value.length <= 18) {
+        return mask(elemento, '99.999.999/9999-99', event);
+    }
+}
+
+function preventArrows(e) {
+    if (e.which >= 37 && e.which <= 40) return false;
+}
+
+function telefoneOuCelularKeypress(event) {
+
+    /* OBS.: Firefox fires the keypress event for keys such as arrows and backspace,
+     * while other browsers only fire it when a caracter is inserted in the input.
+     */
+
+    var keyCode;
+
+    //on firefox arrows keys return 0 on event.which, but return their keyCode correctly on event.keyCode
+    keyCode = event.which || event.keyCode;
+
+    var valid = (keyCode >= 48 && keyCode <= 57) //numbers
+                || (keyCode == 40)
+                || (keyCode == 41)
+                || (keyCode == 32)
+                || (keyCode == 45)
+                || (keyCode === 8) //backspace
+                || (keyCode === 46) // delete
+                || (keyCode >= 37 && keyCode <= 40) //arrowKeys
+    ;
+
+    if (!valid) {
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+    }
+
+    return true;
+}
+
+function telefoneOuCelularKeyup(element, event) {
+    if (event.which == 8 || event.which == 46) return true;
+
+    var val = element.value;
+
+    val = val.replace("(", "").replace(")", "").replace("-", "").replace(" ", "").substring(0, 11);
+
+    var valLength = val.length;
+
+    if (valLength == 0) {
+        element.value = "";
+        return true;
+    }
+
+    var dashPosition = 9;
+    if (valLength >= 11) {
+        dashPosition = 10;
+    }
+
+    var finalValue = "(";
+
+    for (var i = 0; i < valLength; i++) {
+        finalValue += val.charAt(i);
+
+        if (finalValue.length == 3) finalValue += ") ";
+        if (finalValue.length == dashPosition) finalValue += "-";
+    }
+
+    element.value = finalValue;
+
+    return true;
+}
+
+function dateMask(element, event) {
+    //var keyCode = event.which;
+    var keyCode = event.which;
+
+    var isPrintableCaracter = (keyCode >= 32 && keyCode <= 126) || (keyCode >= 128 && keyCode <= 255);
+
+    var isNumber = keyCode >= 48 && keyCode <= 57;
+    var isBarra = keyCode === 47;
+
+    var isBackspace = event.keyCode === 8;
+    var isTab = event.keyCode === 9;
+    var isDel = event.keyCode === 46;
+
+    if (isPrintableCaracter && !isNumber && !isBarra) {
+        return false;
+    }
+
+    if (isBackspace || isTab || isDel) {
+        return true;
+    }
+
+
+    var length = element.value.length;
+    switch (length) {
+        case 0: //first character must be 0, 1, 2 or 3
+            if (keyCode < 48 || keyCode > 51) return false;
+            break;
+        case 1: //second element must not be barra, if first element is 3, second element must be 0 or 1
+            if (isBarra) return false;
+            if (element.value[0] === "3" && !(keyCode === 48 || keyCode === 49)) return false
+            break;
+        case 2: //if not barra, must be 0 or 1
+            if (!isBarra) {
+                if (keyCode !== 48 && keyCode !== 49) return false;
+                element.value += "/";
+            }
+            break;
+        case 3: // first digit of month must be 0 or 1
+            if (keyCode !== 48 && keyCode !== 49) return false;
+            break;
+        case 4: //if first digit of month is 1, seconde digit must be 0, 1 or 2
+            if (isBarra) return false;
+            if (element.value[3] === "1" && !(keyCode === 48 || keyCode === 49 || keyCode === 50)) return false;
+            break;
+        case 5:
+            if (!isBarra) {
+                if (!(keyCode === 49 || keyCode === 50)) return false;
+                element.value += "/";
+            }
+            break;
+        case 6:
+            if (!(keyCode === 49 || keyCode === 50)) return false;
+        case 7: case 8: case 9:
+            if (isBarra) return false;
+            break;
+        default:
+            return false;
+    }
+
+    return true;
+}
+
+function isVirgula(s) {
+    return s === ",";
+}
+
+function isBarra(s) {
+    return s === "/";
+}
+
+function isInt(i) {
+    try { return !isNaN(parseInt(i));} catch (e) {}
+    return false;
+}
+
+String.prototype.replaceAll = function (search, replacement) {
+    var target = this;
+
+    while (target.indexOf(search) != -1) {
+        target = target.replace(search, replacement);
+    }
+
+    return target;
+    //return target.replace(new RegExp(search, 'g'), replacement);
+};
+
+function leituraMedidorInput(element, event) {
+
+    var val = element.value.replaceAll(",", "");
+    var formatted = val.charAt(0);
+    
+    var lastChar = formatted;
+
+    var lastCharIsVirgula, lastCharIsBarra, lastCharIsNumber;
+
+    function updateLastChars() {
+        lastCharIsVirgula = isVirgula(lastChar);
+        lastCharIsBarra = isBarra(lastChar);
+        lastCharIsNumber = isInt(lastChar);
+    }
+
+    updateLastChars();
+
+    var numberOfVirgulas = 0;
+
+    for (var i = 1; i < val.length; i++) {
+        var currentChar = val.charAt(i);
+
+        var currentCharIsBarra = isBarra(currentChar);
+        var currentCharIsNumero = !currentCharIsBarra;
+
+        if (lastCharIsNumber && currentCharIsNumero) {
+            if (numberOfVirgulas < 4) {
+                formatted += ",";
+                numberOfVirgulas++;
+            }
+        } 
+
+        formatted += currentChar;
+
+        lastChar = currentChar;
+        updateLastChars();
+    }
+
+    element.value = formatted;
+}
+
+function leituraMedidorKeyup(input, event) {
+    var keyCode = event.which;
+    var isNumber = keyCode >= 48 && keyCode <= 57;
+    var isVirgula = keyCode === 44;
+    var isBarra = keyCode === 47;
+
+    if (input.value.length == 0) {
+        return isNumber;
+    }
+
+    return isNumber || isVirgula || isBarra;
+}
+
+function MascaraMoeda(objTextBox, e) {
+    var SeparadorMilesimo = ".";
+    var SeparadorDecimal = ",";
+    var sep = 0;
+    var key = '';
+    var i = j = 0;
+    var len = len2 = 0;
+    var strCheck = '0123456789';
+    var aux = aux2 = '';
+    var whichCode = (window.Event) ? e.which : e.keyCode;
+    if (whichCode == 13 || whichCode == 8) return true;
+    key = String.fromCharCode(whichCode); // Valor para o código da Chave  
+    if (strCheck.indexOf(key) == -1) return false; // Chave inválida  
+    len = objTextBox.value.length;
+    for (i = 0; i < len; i++)
+        if ((objTextBox.value.charAt(i) != '0') && (objTextBox.value.charAt(i) != SeparadorDecimal)) break;
+    aux = '';
+    for (; i < len; i++)
+        if (strCheck.indexOf(objTextBox.value.charAt(i)) != -1) aux += objTextBox.value.charAt(i);
+    aux += key;
+    len = aux.length;
+    if (len == 0) objTextBox.value = '';
+    if (len == 1) objTextBox.value = '0' + SeparadorDecimal + '0' + aux;
+    if (len == 2) objTextBox.value = '0' + SeparadorDecimal + aux;
+    if (len > 2) {
+        aux2 = '';
+        for (j = 0, i = len - 3; i >= 0; i--) {
+            if (j == 3) {
+                aux2 += SeparadorMilesimo;
+                j = 0;
+            }
+            aux2 += aux.charAt(i);
+            j++;
+        }
+        objTextBox.value = '';
+        len2 = aux2.length;
+        for (i = len2 - 1; i >= 0; i--)
+            objTextBox.value += aux2.charAt(i);
+        objTextBox.value += SeparadorDecimal + aux.substr(len - 2, len);
+    }
+    return false;
+}
+
+function horaMinutoMask(element, event) {
+    var keyCode = event.which;
+    var isNumber = isNumberKey(keyCode);
+    var isDoisPontos = keyCode === 58;
+
+    if (!isNumber && !isDoisPontos) {
+
+        if (isValidPressFirefox(event)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    var length = element.value.length;
+
+    switch (length) {
+        case 0:
+            //hora first digit can only be 0, 1 or 2
+            if (keyCode < 48 || keyCode > 50) return false;
+            break;
+        case 1:
+            //if hour first digit is 2, can only be up to 3
+            if (element.value == "2") {
+                if (keyCode < 48 || keyCode > 51) return false;
+            }
+            break;
+        case 2:
+            if (isNumber) {
+                //min first digit can only be up to 6
+                if (keyCode < 48 || keyCode > 53) return false;
+                element.value += ":";
+            }
+            break;
+        case 3:
+            //min first digit can only be up to 6
+            if (keyCode < 48 || keyCode > 53) return false;
+            break;
+        case 4:
+            return isNumber;
+
+        default: return isValidPressFirefox(event);
+    }
+
+    return true;
+}
+
+function isNumberKey(keyCode) {
+    return keyCode >= 48 && keyCode <= 57;
+}
+
+function formataCPF(elemento, event) {
+    return mask(elemento, '999.999.999-99', event);
+}
+
+function isValidPressFirefox(event) {
+    var keyCode;
+
+    //on firefox arrows keys return 0 on event.which, but return their keyCode correctly on event.keyCode
+    keyCode = event.which || event.keyCode;
+
+    return (keyCode === 8) //backspace
+    || (keyCode === 46) // delete
+                || (keyCode >= 37 && keyCode <= 40); //arrowKeys
+}

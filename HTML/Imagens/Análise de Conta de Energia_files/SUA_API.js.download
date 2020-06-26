@@ -1,0 +1,848 @@
+﻿/*
+ * APIs Javascript de interafe do SUA com os canais Web. 
+ * Criado por: Môrisson Marcel
+ * Modificado em: 15/03/2016
+ */
+
+//Função para cookie
+function Cookie() {
+    var expire = new Date();
+    /*! Cria e modifica cookie
+	* @param: {string} nome cookie
+	* @param: {string|número|boolean} valor cookie
+	* @param: {number} data expiração do cookie em milissegundos.
+	*/
+    this.set = function (name, value, expirationDate) {
+        if (!(name && value)) return;
+        //expire.setTime(expire.getTime() + expirationDate);
+
+        if ((expirationDate != undefined) && (expirationDate != null))
+            expire.setTime(expirationDate);
+        else
+            expire.setYear(expire.getFullYear() + 1);
+
+        var cookieConf = name + '=' + value + ';expires=' + expire.toUTCString() + ";path=/";
+        document.cookie = cookieConf;
+    }
+
+    /*! pega o valor do cookie
+	* @param: {string} nome Cookie
+	* Retorna False se o cookie não existir
+	*/
+    this.get = function (name) {
+        for (i in j = document.cookie.split(';'))
+            if (j[i].indexOf(name + '=') > -1)
+                return j[i].substr(j[i].indexOf('=') + 1, this.length);
+        return false;
+    }
+
+    /*! excluir o cookie
+	* @param: {string} nome Cookie 
+	*/
+    this.exclude = function (name) {
+        var expirationDate = new Date().getDate() - 1;
+        this.set(name, this.get(name), expirationDate);
+    }
+
+}
+
+function noop(){}
+
+var SUA$ = {
+    urlBaseSUA: null,
+    urlBaseCanal: null,
+    fullscreen: false,
+    inicializado: false,
+    sessaoExpirou: false,
+    pnLembrarMe:'',
+    relogin: false,
+    loginInicializado: false,
+    divContainer: null,
+    divRosetta: null,
+    iframeLogin: null,
+    botaoFechar: null,
+    urlRetorno: null,
+    tokenResultado: '',
+    eventoLoginConcluido: noop,
+    eventoLoginCancelado: noop,
+    eventoStatusConcluido: noop,
+    eventoTimeoutRestarted: noop,
+    eventoAcessoGC: noop,
+    eventoRelogin: noop,
+    eventoSessaoExpirada: noop,
+    timeoutAcao: undefined,
+    tempoParaExpirar: 480000,
+    canalSUA: '',
+    servicoSUA: '',
+    tokenSUA: '',
+    // Região de métodos de uso privado ******************************
+
+    isIE7or8: function () {
+        return (window.navigator.userAgent.indexOf("MSIE 7") >= 0 ||
+                window.navigator.userAgent.indexOf("MSIE 8") >= 0)
+        ;
+    },
+
+    appendLoginWindow: function () {
+        var ie_concat = "";
+
+        if (SUA$.isIE7or8()) {
+            //ie_concat = "IE";
+        }
+
+        var bg_win = $("<div>");
+        bg_win.addClass("suabackgroundDiv" + ie_concat);
+        bg_win.attr("id", "SUA-BACKGROUND-DIV");
+        this.divContainer = bg_win;
+        this.divContainer.hide();
+
+        var main_win = $("<div>");
+        main_win.addClass("suawindowdiv" + ie_concat);
+
+        if (this.fullscreen) {
+            main_win.addClass("fullscreen");
+        }
+
+        bg_win.append(main_win);
+
+        // Configurando o GIF de loading...
+        var div_rosetta = $('<div class="overlay" id="loader">' +
+                                '<div class="boxLoader">' +
+                                    '<img title="Por favor, aguarde..." alt="Por favor, aguarde..." src="' + this.urlBaseSUA + '/Content/Images/mainLoader.gif">' +
+                                '</div>' +
+                                '<div class="loaderText">' +
+                                    'Por favor, aguarde...' +
+                                '</div>'+
+                            '</div>');
+        main_win.append(div_rosetta);
+
+        this.divRosetta = div_rosetta;
+
+        var btn_close = $("<span>");
+        btn_close.addClass("suabotaofechar" + ie_concat);
+        btn_close.html("X");
+        main_win.append(btn_close);
+
+        this.botaoFechar = btn_close;
+        if (this.botaoFechar.on) {
+            this.botaoFechar.on("click", this.botaoFecharClicked);
+        } else {
+            this.botaoFechar.bind("click", this.botaoFecharClicked);
+        }
+
+        var ifrm_container = $("<div>");
+        ifrm_container.addClass("suaIframeContainer" + ie_concat);
+        main_win.append(ifrm_container);
+
+        var frm_login = $("<iframe>");
+        frm_login.addClass("suaIframe" + ie_concat);
+        if (this.isIE7or8()) {
+            frm_login.attr("frameborder", "0");
+        }
+
+        ifrm_container.append(frm_login);
+        this.iframeLogin = frm_login;
+
+        $("body").append(bg_win);
+
+        frm_login.on("load", function () {
+            if (SUA$.divRosetta) {
+                if (SUA$.isIE7or8()) {
+                    SUA$.divRosetta.fadeOut(100, function () {
+                        this.style.removeAttribute('filter');
+                    });
+                } else {
+                    SUA$.divRosetta.fadeOut(300);
+                }
+
+            }
+        });
+
+        this.loginInicializado = true;
+
+        if (SUA$.isIE7or8()) {
+            $(this.divContainer.style).removeAttr('filter');
+        }
+    },
+
+    botaoFecharClicked: function () {
+        var container = $("#SUA-BACKGROUND-DIV");
+        var concluido = false;
+        
+        concluido = verificaLoginConcluido(container);
+        container.fadeOut(250, function () {
+            if (concluido) {
+                if (relogin) {
+                    SUA$.eventoRelogin();
+                } else {
+                    SUA$.eventoLoginConcluido({ token: SUA$.tokenSUA });
+                }
+            }
+            else {
+                if (SUA$.eventoLoginCancelado) {
+                    SUA$.eventoLoginCancelado();
+                }
+            }
+        });
+        
+    },
+
+    beginNavigation: function (canal, servico, view, token) {
+        var cookie = new Cookie().get("br.com.Light.SUAv2.auth.cookie");
+        var str_token = token;
+        var returnUrl = SUA$.urlRetorno;
+
+        if (cookie && !token) {
+            str_token = cookie;
+        }
+
+        SUA$.iframeLogin.attr("src", SUA$.urlBaseSUA + view + "?"
+            + "DominioCanal=" + SUA$.urlBaseCanal + "&"
+            + (canal ? "PlataformaVersao=" + canal : '')
+            + (returnUrl ? "&ReturnUrl=" + returnUrl : '')
+            + (servico ? "&Servico=" + servico : '')
+            + (str_token ? "&EncodeToken=" + str_token : '')
+            + (str_token ? "&Token=" + str_token : '')
+            + "&fullScreen=" + (SUA$.fullscreen ? true : false));
+    },
+
+    showAll: function () {
+        var container = $(this.divContainer);
+        var iframe = $(this.iframeLogin);
+        if (SUA$.isIE7or8()) {
+            container.fadeIn(250, function() {
+                this.style.removeAttribute('filter');
+            });
+        } else {
+            container.fadeIn(250);
+        }
+    },
+
+    // Região de inicialização do SCRIPT do SUA *********************
+
+    initDispacher: function () {
+        console.log("Inicializando dispacher de mensagens para domínio " +
+            SUA$.urlBaseSUA);
+
+        if (window.addEventListener) {
+            window.addEventListener("message", this.onMessageListener);
+        } else {
+            window.attachEvent("onmessage", this.onMessageListener);
+        }
+
+    },
+
+    onMessageListener: function (e) {
+        var url_base = new String(SUA$.urlBaseSUA);
+
+        if (url_base.indexOf(e.origin) >= 0) {
+
+            if (e.data === "FecharIframe") {
+                SUA$.botaoFecharClicked();
+                return;
+            }
+
+            if (e.data && e.data.indexOf("AcessoGC|") > -1) {
+                var _content = e.data.split("|");
+                var pn = _content[1];
+                var cnpj = _content[2];
+                SUA$.eventoAcessoGC(pn, cnpj);
+
+                var container = SUA$.divContainer;
+                if (SUA$.isIE7or8()) {
+                    container.fadeOut(250, function () {
+                        this.style.removeAttribute('filter');
+                    });
+                } else {
+                    container.fadeOut(250, function () {
+                    });
+                }
+
+                SUA$.divContainer.attr('style', '');
+            }
+
+            if (e.data && e.data.indexOf("tratarNavegacao|") > -1) {
+
+                var _content = e.data.split("|");
+
+                var s_src = _content[1];
+
+                if (s_src.indexOf("Home/Concluido") > 0) {
+                    var tkn_part = _content[2];
+                    var isAssociado = _content[3];
+
+                    if (tkn_part) {
+                        new Cookie().set("br.com.Light.SUAv2.auth.cookie", tkn_part);
+                    }
+
+                    if (SUA$.relogin) {
+                        SUA$.eventoRelogin({ token: tkn_part });
+                    } else {
+                        SUA$.eventoLoginConcluido({ token: tkn_part, isAssociado: isAssociado });
+                    }
+
+                    SUA$.setVerificacaoSessao(true);
+
+                    var container = SUA$.divContainer;
+                    if (SUA$.isIE7or8()) {
+                        container.fadeOut(250, function () {
+                            this.style.removeAttribute('filter');
+                        });
+                    } else {
+                        container.fadeOut(250, function () {
+                        });
+                    }
+
+                    SUA$.divContainer.attr('style', '');
+
+                } 
+            }
+            if (e.data && e.data == "mudancaNavegacao") {
+                if (SUA$.divRosetta) {
+                    if (SUA$.isIE7or8()) {
+                        SUA$.divRosetta.fadeIn(100, function() {
+                            this.style.removeAttribute('filter');
+                        });
+                    } else {
+                        SUA$.divRosetta.fadeIn(100);
+                    }
+                }
+            }
+
+            if (e.data && e.data == "mudouNavegacao") {
+                if (SUA$.divRosetta) {
+                    if (SUA$.isIE7or8()) {
+                        SUA$.divRosetta.fadeOut(100, function () {
+                            this.style.removeAttribute('filter');
+                            $(this).hide();
+                        });
+                    } else {
+                        SUA$.divRosetta.fadeOut(300);
+                    }
+                }
+            }
+
+            if (e.data && e.data == "getLembrarPN") {
+
+                var pnumero = '';
+                if (!SUA$.pnLembrarMe || SUA$.pnLembrarMe.length === 0) {
+                    pnumero = new Cookie().get("lembreme");
+                } else {
+                    pnumero = SUA$.pnLembrarMe;
+                }
+
+                var pLembrarPN = {
+                    recuperaPN : true,
+                    numParceiro: pnumero
+                };
+                var contentResponse = JSON.stringify(pLembrarPN);
+                SUA$.iframeLogin[0].contentWindow.postMessage(contentResponse, e.origin);
+                return;
+            }
+
+            if (e.data && e.data == "ObterTentativas") {
+                var cookie = new Cookie().get("br.com.Light.SUAv2.auth.cookie.try");
+
+                var conteudoCookie = cookie.toString().split("|");
+                var tentativas = conteudoCookie[0] ? conteudoCookie[0] : 0;
+                var primeiroAcesso = conteudoCookie[1];
+                var proximoAcesso = conteudoCookie[2];
+
+                var parametrosPost = {
+                    ObterTentativas: true,
+                    QuantidadeTentativas: tentativas,
+                    PrimeiroAcesso: Date.parse(new Date(primeiroAcesso)),
+                    ProximoAcesso: Date.parse(new Date(proximoAcesso))
+                };
+
+                var parametrosString = JSON.stringify(parametrosPost);
+                SUA$.iframeLogin[0].contentWindow.postMessage(parametrosString, e.origin);
+            }
+
+            if (e.data && e.data == "ContabilizarTentativas") {
+                var nomeCookieTentativas = "br.com.Light.SUAv2.auth.cookie.try";
+                var dataHoraAtual = new Date();
+                var dataExpiracao = new Date(); dataExpiracao.setDate(dataExpiracao.getDate() + 1);
+                var contabilizou = true;
+                var cookie = new Cookie().get(nomeCookieTentativas);
+
+                if (!cookie) {
+                    new Cookie().set(nomeCookieTentativas, "1|" + dataHoraAtual, dataExpiracao);
+                } else {
+                    //Obtendo os valores dentro do cookie
+                    var conteudoCookie = cookie.toString().split("|");
+                    var qtdTentativas = Number(conteudoCookie[0]);
+                    var primeiroAcesso = new Date(conteudoCookie[1]);
+                    var proximoAcesso = null;
+                    if (conteudoCookie.length > 2)
+                        proximoAcesso = new Date(conteudoCookie[2]);
+
+                    //Não permitindo que a quantidade de tentativas incrementadas
+                    //ultrapassem o valor de 8
+                    if (!qtdTentativas)
+                        qtdTentativas = 1;
+                    else {
+                            if ((qtdTentativas < 4) || ( qtdTentativas >= 4 && dataHoraAtual >= proximoAcesso) ) {
+                                    qtdTentativas = qtdTentativas >= 8 ? 8 : qtdTentativas + 1;
+                            } else {
+                                contabilizou = false;
+                            }
+                        }
+                        
+
+                    //configurando o próximo acesso conforme a quantidade de tentativas
+                    //de acesso realizadas
+                    if (qtdTentativas >= 4 && dataHoraAtual >= proximoAcesso) {
+                        switch (qtdTentativas) {
+                            case 4:
+                                proximoAcesso = new Date(dataHoraAtual); proximoAcesso.setMinutes(proximoAcesso.getMinutes() + 1);
+                                break;
+                            case 5:
+                                proximoAcesso = new Date(dataHoraAtual); proximoAcesso.setMinutes(proximoAcesso.getMinutes() + 5);
+                                break;
+                            case 6:
+                                proximoAcesso = new Date(dataHoraAtual); proximoAcesso.setMinutes(proximoAcesso.getMinutes() + 15);
+                                break;
+                            case 7:
+                                proximoAcesso = new Date(dataHoraAtual); proximoAcesso.setMinutes(proximoAcesso.getMinutes() + 30);
+                                break;
+                            default:
+                                proximoAcesso = new Date(dataHoraAtual); proximoAcesso.setMinutes(proximoAcesso.getMinutes() + 60);
+                                break;
+                        }
+                    }
+
+                    new Cookie().set(nomeCookieTentativas, qtdTentativas + "|" + dataHoraAtual +
+                        ( proximoAcesso === null ? "" : "|" + proximoAcesso), dataExpiracao);
+
+                    var parametrosPost = {
+                        TentativasContabilizadas: true,
+                        QuantidadeTentativas: qtdTentativas,
+                        PrimeiroAcesso: Date.parse(dataHoraAtual),
+                        ProximoAcesso: Date.parse(proximoAcesso),
+                        Contabilizou : contabilizou
+                    };
+
+                    var parametrosString = JSON.stringify(parametrosPost);
+                    SUA$.iframeLogin[0].contentWindow.postMessage(parametrosString, e.origin);
+                }
+            }
+
+            if (e.data && e.data == "ZerarTentativas") {
+                var cookie = new Cookie().get("br.com.Light.SUAv2.auth.cookie.try");
+
+                if (cookie) {
+                    new Cookie().exclude("br.com.Light.SUAv2.auth.cookie.try");
+                }
+            }
+
+            if (e.data && e.data.loginSucesso) {
+                if (e.data.token) {
+                    SUA$.tokenSUA = null;
+                    SUA$.tokenSUA = e.data.token;
+                    new Cookie().set("br.com.Light.SUAv2.auth.cookie", SUA$.tokenSUA);
+                }
+            }
+
+            if (e.data && e.data.indexOf("loginSucesso") > -1) {
+                var indxValue = e.data.indexOf("-");
+                if (indxValue > -1) {
+                    var valToken = e.data.substr(indxValue + 1, e.data.length - indxValue);
+                    SUA$.tokenSUA = valToken;
+                    new Cookie().set("br.com.Light.SUAv2.auth.cookie", SUA$.tokenSUA);
+                }
+            }
+
+        }
+    },
+
+    initDOM: function (skipJQuery) {
+        var p_doc = document;
+
+        if (!skipJQuery) {
+            var url_jquery = "";
+
+            if (window.navigator.userAgent.indexOf("MSIE 7") >= 0 ||
+                window.navigator.userAgent.indexOf("MSIE 8") >= 0 ||
+                window.navigator.userAgent.indexOf("MSIE 9") >= 0)
+                    {
+                url_jquery = SUA$.urlBaseSUA + "Scripts/jquery-1.9.1.min.js";
+            } else {
+                url_jquery = SUA$.urlBaseSUA + "Scripts/jquery-2.1.4.min.js";
+            }
+            console.log("Adicionando a referência de jQuery à página - " + url_jquery);
+
+            var scr_jquery = p_doc.createElement("script");
+            scr_jquery.src = url_jquery;
+
+            if (p_doc.head) {
+                p_doc.head.appendChild(scr_jquery);
+            } else {
+                //p_doc.appendChild(scr_jquery);
+                document.getElementsByTagName('head')[0].appendChild(scr_jquery);
+            }
+        }
+
+        if ((window.navigator.userAgent.indexOf("MSIE 7") >= 0 ||
+             window.navigator.userAgent.indexOf("MSIE 8") >= 0 ||
+             window.navigator.userAgent.indexOf("MSIE 9") >= 0)) {
+            var url_json2 = SUA$.urlBaseSUA + "Scripts/Public/json2.min.js";
+
+            var scr_json2 = p_doc.createElement("script");
+            scr_json2.src = url_json2;
+
+            if (p_doc.head) {
+                p_doc.head.appendChild(scr_json2);
+            } else {
+                document.getElementsByTagName('head')[0].appendChild(scr_json2);
+            }
+        }
+
+        var url_css = SUA$.urlBaseSUA + "/Content/estilosua.css";
+        console.log("Adicionando referência ao CSS necessário para interface de login - " + url_css);
+
+        var scr_style = p_doc.createElement("link");
+        scr_style.setAttribute("href", url_css);
+        scr_style.setAttribute("rel", "stylesheet");
+        scr_style.setAttribute("type", "text/css");
+
+        if (p_doc.head) {
+            p_doc.head.appendChild(scr_style);
+        } else {
+            document.getElementsByTagName('head')[0].appendChild(scr_style);
+        }
+
+        this.inicializado = true;
+    },
+    
+    setVerificacaoSessao: function (data) {
+        if (data) {
+            if (!data.Valido && data.TempoExpiracao <= 0  ) {
+                SUA$.sessaoExpirou = true;
+                SUA$.eventoSessaoExpirada();
+            }
+
+            if ( data === true || (data.Valido && data.TokenSeguranca && data.TempoExpiracao > 0)  ) {
+                document.querySelector("body").addEventListener("click", SUA$.restartTimeoutAcao);
+                document.querySelector("body").addEventListener("keyup", SUA$.restartTimeoutAcao);
+                SUA$.restartTimeoutAcao();
+                SUA$.sessaoExpirou = false;
+            }
+            if (data.PN && data.PN.length > 5) {
+                SUA$.pnLembrarMe = data.PN;
+            }
+        }
+    },
+
+    restartTimeoutAcao: function (event) {
+        if (SUA$.timeoutAcao) {
+            window.clearTimeout(SUA$.timeoutAcao);
+        }
+        SUA$.timeoutAcao = window.setTimeout(SUA$.expirarSessao, SUA$.tempoParaExpirar);
+        SUA$.eventoTimeoutRestarted(SUA$.tempoParaExpirar);
+
+        // Atualizar o token
+               
+        var cookie = new Cookie().get("br.com.Light.SUAv2.auth.cookie");
+
+        if (cookie == false) {
+            
+            return;
+        }
+
+        $.ajax({
+            url: SUA$.urlBaseSUA + "Home/AtualizaTokenBinarySeguranca",
+            method: "GET",
+            data: {
+                tokenBinary: cookie,
+                canal: SUA$.canalSUA
+            }
+        }).success(function (data, status, jHxr) {
+            if (data) {
+                SUA$.tokenSUA = data.TokenSeguranca;
+                new Cookie().set("br.com.Light.SUAv2.auth.cookie", SUA$.tokenSUA);
+            }
+        }).error(function (err, status, jXhr) {
+            console.log(err);
+            
+        });
+
+    },
+
+    expirarSessao: function () {
+        console.log('expirando sessao');
+        var cookie = new Cookie().get("br.com.Light.SUAv2.auth.cookie");
+        $.ajax({
+            url: SUA$.urlBaseSUA + "Home/getLoginResult",
+            method: "GET",
+            data: {
+                tokenBinary: cookie
+            }
+        }).success(function (data, status, jHxr) {
+            if (data) {
+                if (data.LembrarMe) {
+                    new Cookie().set("lembreme", data.PN);
+                } else {
+                    new Cookie().exclude("lembreme");
+                }
+            }
+        }).error(function (err, status, jXhr) {
+            new Cookie().exclude("lembreme");
+        });
+
+
+        new Cookie().exclude("br.com.Light.SUAv2.auth.cookie");
+        new Cookie().set("SUA_Force_Login", true);
+        SUA$.eventoSessaoExpirada();
+       
+    },
+
+    // Região de funções de interface pública **********************
+    getLoginStatus: function (canal, opcoes) {
+
+        if(canal)
+            SUA$.canalSUA = canal;
+
+        SUA$.checkOptionsFunctions(opcoes);
+
+        var cookie = new Cookie().get("br.com.Light.SUAv2.auth.cookie");
+
+        if (cookie == false) {
+            if (SUA$.eventoStatusConcluido) {
+                SUA$.eventoStatusConcluido({ TokenSeguranca: null, Valido: false }, null);
+            }
+            return;
+        }
+
+        $.ajax({
+            url: SUA$.urlBaseSUA + "Home/ValidaTokenBinarySeguranca",
+            method: "GET",
+            data: {
+                tokenBinary: cookie,
+                canal: canal
+            }
+        }).success(function (data, status, jHxr) {
+            if (data) {
+                SUA$.tokenSUA = data.TokenSeguranca;
+                new Cookie().set("br.com.Light.SUAv2.auth.cookie", SUA$.tokenSUA);
+                SUA$.setVerificacaoSessao(data);
+            }
+
+            SUA$.eventoStatusConcluido(data, null);
+        }).error(function (err, status, jXhr) {
+            if (SUA$.eventoStatusConcluido) {
+                SUA$.eventoStatusConcluido(null, err);
+            }
+        });
+    },
+
+    doLogin: function (canal, servico, opcoes) {
+        var callLembrarMe = false;
+
+        if (!SUA$.inicializado) {
+            throw "Roteiro de inicialização do SUA não executado. Por favor, execute SUA$.init para definir as configurações iniciais.";
+        }
+
+        if (opcoes) {
+            if (opcoes.urlRetorno) {
+                SUA$.urlRetorno = opcoes.urlRetorno;
+            }
+
+            SUA$.checkOptionsFunctions(opcoes);
+
+            if (opcoes.fullscreen) {
+                SUA$.fullscreen = true;
+            }
+
+            if (opcoes.sessaoExpirou && opcoes.pnLembrarMe ) {
+                callLembrarMe = true;
+            }
+
+        }
+
+        if (!SUA$.loginInicializado) {
+            SUA$.appendLoginWindow();
+        }
+        SUA$.canalSUA = canal;
+        SUA$.servicoSUA = servico;
+
+        SUA$.showAll();
+
+        if (callLembrarMe) {
+            if (SUA$.tokenSUA === undefined) {
+                SUA$.tokenSUA = new Cookie().get("br.com.Light.SUAv2.auth.cookie");
+            }
+        }
+
+        SUA$.beginNavigation(canal, servico, "Home/Login");
+        SUA$.tokenSUA = null;
+    },
+
+    doConfig: function (canal, servico, token, opcoes) {
+
+        if (!SUA$.inicializado) {
+            throw "Roteiro de inicialização do SUA não executado. Por favor, execute SUA$.init para definir as configurações iniciais.";
+        }
+
+        if (opcoes && opcoes.urlRetorno) {
+            SUA$.urlRetorno = opcoes.urlRetorno;
+        }
+
+        SUA$.checkOptionsFunctions(opcoes);
+
+        if (!SUA$.loginInicializado) {
+            SUA$.appendLoginWindow();
+        }
+
+        SUA$.showAll();
+
+        SUA$.beginNavigation(canal, servico, "Home/SuaConfiguracoes", token);
+    },
+
+    doLogout: function (opcoes) {
+        SUA$.checkOptionsFunctions(opcoes);
+        SUA$.tokenSUA = null;
+        new Cookie().exclude("br.com.Light.SUAv2.auth.cookie");
+
+        $.ajax({
+            url: SUA$.urlBaseSUA + "Home/logout",
+            method: "GET"
+        }).success(function (data, status, jHxr) {
+            
+        });
+
+        if (SUA$.eventoLoginConcluido) {
+            SUA$.eventoLoginConcluido();
+        }
+    },
+
+    checkOptionsFunctions: function (opcoes) {
+        if (opcoes) {
+            if (typeof opcoes.onConcluido === "function") {
+                SUA$.eventoLoginConcluido = opcoes.onConcluido;
+            }
+
+            if (typeof opcoes.onCancelado === "function") {
+                SUA$.eventoLoginCancelado = opcoes.onCancelado;
+            }
+
+            if (typeof opcoes.onRelogin === "function") {
+                SUA$.eventoRelogin = opcoes.onRelogin;
+            }
+
+            if (typeof opcoes.onSessaoExpirada === "function") {
+                SUA$.eventoSessaoExpirada = opcoes.onSessaoExpirada;
+            }
+
+            if (typeof opcoes.onTimeoutRestarted === "function") {
+                SUA$.eventoTimeoutRestarted = opcoes.onTimeoutRestarted;
+            }
+
+            if(typeof opcoes.onAcessoGC === "function"){
+                SUA$.eventoAcessoGC = opcoes.onAcessoGC;
+            }
+        }
+    },
+
+    init: function (opt) {
+        if (opt) {
+
+            if (!opt.urlBaseSUA) {
+                throw "Necessário informar atributo de configuracao opt.urlBaseSUA";
+            }
+            SUA$.urlBaseSUA = opt.urlBaseSUA;
+
+            if (!opt.urlBaseCanal) {
+                throw "Necessário informar atributo de configuracao opt.urlBaseCanal";
+            }
+
+            if (opt.tempoParaExpirar) {
+                try {
+                    SUA$.tempoParaExpirar = parseInt(opt.tempoParaExpirar);
+                } catch (e) {
+                    console.log(e);
+                    SUA$.tempoParaExpirar = 480000;
+                }
+            }
+
+            SUA$.urlBaseCanal = opt.urlBaseCanal;
+
+            SUA$.fullscreen = opt.fullscreen;
+
+            //Alteração para carregar o jquery-1.9.1.min.js para o IE9
+            var noJquery = true;
+            if (!opt.noJQuery || (this.isIE7or8 || window.navigator.userAgent.indexOf("MSIE 9") >= 0))
+                noJquery = false;
+
+            this.initDOM(noJquery);
+
+            this.initDispacher();
+
+            var sessionJustExpired = new Cookie().get("SUA_Force_Login");
+            if (sessionJustExpired) {
+                new Cookie().exclude("SUA_Force_Login");
+                if (typeof opt.sessionExpired === "function") {
+                    opt.sessionExpired();
+                }
+            }
+
+            new Cookie().exclude("SUA_Force_Login");
+        }
+
+        //preload gif
+        var img = new Image();
+        img.src = this.urlBaseSUA + '/Content/Images/mainLoader.gif';
+        img = undefined;
+    },
+
+    changeClientWithoutLoginScreen: function (pnSelecionado, plataforma , opcoes) {
+        var callLembrarMe = false;
+
+        if (!SUA$.inicializado) {
+            throw "Roteiro de inicialização do SUA não executado. Por favor, execute SUA$.init para definir as configurações iniciais.";
+        }
+
+        if (opcoes) {
+            if (opcoes.urlRetorno) {
+                SUA$.urlRetorno = opcoes.urlRetorno;
+            }
+
+            SUA$.checkOptionsFunctions(opcoes);
+
+            if (opcoes.fullscreen) {
+                SUA$.fullscreen = true;
+            }
+        }
+
+        if (!SUA$.loginInicializado) {
+            SUA$.appendLoginWindow();
+        }
+        SUA$.canalSUA = plataforma;
+        SUA$.servicoSUA = "8";
+
+        SUA$.showAll();
+
+        SUA$.tokenSUA = new Cookie().get("br.com.Light.SUAv2.auth.cookie");
+        SUA$.navigationChangeClient(pnSelecionado, "Home/ChangeClientSession");
+    },
+
+    navigationChangeClient: function (pnSelecionado, action) {
+        SUA$.iframeLogin.attr("src", SUA$.urlBaseSUA + action + "?"
+            + "DominioCanal=" + SUA$.urlBaseCanal + "&"
+            + "token=" + SUA$.tokenSUA + "&"
+            + "Plataforma=" + SUA$.canalSUA + "&"
+            + (pnSelecionado ? "pnSelecionado=" + pnSelecionado : '')
+            + "&fullScreen=" + (SUA$.fullscreen ? true : false));
+
+    }
+}
+
+//********************************************************
+
+function verificaLoginConcluido(container) {
+    if (SUA$.tokenSUA) {
+        SUA$.getLoginStatus(SUA$.canalSUA, null);
+        SUA$.beginNavigation(SUA$.canalSUA, SUA$.servicoSUA, "Home/concluido", SUA$.tokenSUA);
+    }
+    return SUA$.tokenSUA;
+}

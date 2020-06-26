@@ -1,0 +1,98 @@
+﻿(function () {
+    'use strict';
+
+    var divPrincipal;
+    var btnEnviar;
+    var captcha;
+
+    var erroDataFutura = "A data da autoleitura não pode superior à data atual."
+
+    window.urlAjuda = "AnaliseContaEnergia/Index";
+
+    ValidationHelper.data("#DataAutoleitura");
+    ValidationHelper.leituraMedidor("#LeituraMedidor");
+
+    initVars();
+
+    var dropzone = new Dropzone({
+        dropzone: $("#dropzone-marcacao-leitura"),
+        tbody: $("#tbody-files-marcacao-leitura"),
+        maxFiles: 3,
+        maxSize: 9437184,// = 1MB,
+        maxTotalSize: 9437184,
+        errorElement: $("#dropzone-error"),
+        hideError: true
+    });
+
+    var formController = new FormController({
+        dropzone: dropzone,
+        dropzoneRequired: false,
+        onSubmit: checkEmail,
+        hideOnSuccess: divPrincipal
+    });
+
+    var emailVisible = false;
+    var areaEmail = $("#areaConfirmaEmail");
+    function checkEmail() {
+        var errors = formController.getErrorMessage();
+
+        var motivoSolicitacao = document.querySelector("#MotivoSolicitacao");
+
+        var data = document.querySelector("#DataAutoleitura");
+
+        var data = data.value.split("/");
+
+        var diaInput = data[0], mesInput = data[1], anoInput = data[2];
+
+        var now = new Date();
+
+        if (anoInput > now.getFullYear()) {
+            errors.add(erroDataFutura);
+        } else if (anoInput == now.getFullYear()) {
+
+            if (mesInput > now.getMonth() +1) {
+                errors.add(erroDataFutura);
+            } else if (mesInput == now.getMonth() +1) {
+
+                if (diaInput > now.getDate()) {
+                    errors.add(erroDataFutura);
+                }
+            }
+        }
+
+        if (MotivoSolicitacao.value.trim() == "") {
+            errors.add("Motivo da Solicitação: deve ser preenchido.");
+        }        
+
+        var dataAutoLeitura = document.querySelector("#DataAutoleitura");
+        var leituraMedidor = document.querySelector("#LeituraMedidor");
+
+        if (!dataAutoLeitura.value && (dropzone.getFiles().length || LeituraMedidor.value)) {
+            errors.add("Informe a data da Autoleitura."); 
+        }
+
+        if (dataAutoLeitura.value && (!dropzone.getFiles().length && !LeituraMedidor.value)) {
+            errors.add("É preciso colocar a leitura do medidor ou anexar uma imagem.");
+        }
+
+        if (!emailVisible && !AlteracaoDadosCadastrais.emailChanged) {
+            areaEmail.find("input").prop("disabled", false);
+            areaEmail.fadeIn(300);
+            emailVisible = true;
+            return false;
+        }
+
+        if (errors.hasErrors()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function initVars() {
+        divPrincipal = $("#divPrincipal");
+        btnEnviar = $("#btnEnviar");
+        captcha = $(".g-recaptcha");
+    }
+
+})();

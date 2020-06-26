@@ -116,3 +116,59 @@ function CriarPessoa(){ //é uma função que retorna um objt
         sobrenome:'Silva'
     }
 }
+//classes vs funçoes construtoras
+class Pessoa {
+    constructor(nome){
+        this.nome = nome
+    }
+    falar(){
+        console.log(`Meu nome é ${this.nome}`)
+    }
+}
+const p1 = new Pessoa('Slim Shady')
+p1.falar()
+
+const criarPessoa = nome =>{
+    return{
+        falar: () => console.log(`Meu nome é ${nome}`)
+    }
+}
+const p2 = criarPessoa('João')
+p2.falar()
+
+function Pessoas (nome){
+        this.nome = nome
+    
+    falar() = console.log(`My name is ${this.nome}`)
+}
+const p3 = new Pessoa('Slim Shady')
+p1.falar()
+
+//IIFE -> Immediately invoked Function Expression
+
+(function(){
+    console.log('Será executado na hora!')
+    console.log('Foge do escopo mais abranjente!')
+})()
+
+//Call e Apply
+function getPreco(imposto = 0,moeda = 'R$'){
+    return `${moeda} ${this.preco * (1 - this.desc) * (1 + imposto)}`
+}
+
+const produto = {
+    nome:'Notebook',
+    preco: 4589,
+    desc: 0.15,
+    getPreco
+}
+
+console.log(produto.getPreco())
+
+const carro = { preco:49990, desc:0.2}
+
+console.log(getPreco.call(carro))
+console.log(getPreco.apply(carro))
+
+console.log(getPreco.call(carro,0.17,'$'))
+console.log(getPreco.apply(carro,[0.17,'$']))

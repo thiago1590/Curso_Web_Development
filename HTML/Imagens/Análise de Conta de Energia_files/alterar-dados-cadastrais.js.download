@@ -1,0 +1,345 @@
+﻿var AlteracaoDadosCadastrais = (function ($, ValidationHelper, Dropzone) {
+    'use strict';
+
+    var clienteVarejo = document.getElementById("tipoDocumentoDadosCadastrais") != null;
+
+    var telefone = $("#telefoneDadosCadastrais");
+    var celular = $("#celularDadosCadastrais");
+    var email = $("#emailDadosCadastrais");
+    var dataNascimento = $("#nascimentoDadosCadastrais");
+    var tipoDocumento = $("#tipoDocumentoDadosCadastrais");
+    var numDocumento = $("#numDocumentoDadosCadastrais");
+    var orgaoEmissor = $("#orgaoEmissorDadosCadastrais");
+    var pais = $("#paisDadosCadastrais");
+    var uf = $("#ufDadosCadastrais");
+    var cpfCnpj = $("#cpfCnpjDadosCadastrais");
+
+    var fields = {};
+
+    var inputs = document.querySelectorAll("#alteracaoDados input, #alteracaoDados select, #alteracaoDados textarea");
+
+    for (var i = 0; i < inputs.length; i++) {
+        var input = inputs[i];
+        fields[input.id] = {
+            input: input,
+            originalValue: input.value
+        }
+    }
+
+    document.querySelector("form").addEventListener("reset", function () {
+        console.log('form reset');
+        for (var id in fields) {
+            if (fields.hasOwnProperty(id)) {
+                var obj = fields[id];
+                resetValue(obj);
+            }
+        }
+    });
+
+    function resetValue(obj) {
+        //timeout para que o form seja normalmente resetado e só depois sejam colocados os valores originais.
+        setTimeout(function () {
+            obj.input.value = obj.originalValue;
+        }, 0);
+    }
+
+    ValidationHelper.telefone(telefone);
+    ValidationHelper.validarTelefone(telefone);
+
+    ValidationHelper.celular(celular);
+    ValidationHelper.validarCelular(celular);
+
+    //ValidationHelper.formataCpfCnpj(cpfCnpj);
+
+    if (!cpfCnpj.val() || parseInt(cpfCnpj.val()) == 0) {
+        cpfCnpj.val("");
+    }
+
+    if (clienteVarejo) {
+        ValidationHelper.validarCpf(cpfCnpj);
+        ValidationHelper.formataCPF(cpfCnpj);
+    } else {
+        ValidationHelper.validarCnpj(cpfCnpj);
+        ValidationHelper.formataCNPJ(cpfCnpj);
+    }
+    ValidationHelper.validarEmail(email);
+    ValidationHelper.data("#nascimentoDadosCadastrais", true);
+
+    var dropzoneSection = $("#dados-cadastrais-drop-section");
+
+    var dropzone = new Dropzone({
+        dropzone: dropzoneSection.find("#dropzone-dados-cadastrais"),
+        tbody: dropzoneSection.find("#tbody-dados-cadastrais-files"),
+        maxFiles: 1,
+        maxSize: 9437184, // = 9MB,
+        maxTotalSize: 9437184,
+        extensions: ['jpg', 'png'],
+        errorElement: dropzoneSection.find("#dropzone-dados-cadastrais-error"),
+        hideError: true
+    });
+
+    var selectPais = document.querySelector("#paisDadosCadastrais");
+    var selectUf = document.querySelector("#ufDadosCadastrais");
+
+    function checkPais() {
+        if (selectPais.value === "BR") {
+            selectUf.disabled = false;
+        } else {
+            selectUf.value = "";
+            selectUf.disabled = true;
+        }
+
+        //selectUf.disabled = selectPais.value !== "BR";
+    }
+
+    if (selectPais) {
+        checkPais();
+        selectPais.addEventListener("change", checkPais);
+    }
+
+    if (cpfCnpj.val() === '00000000000') {
+        cpfCnpj.val('');
+    }
+
+    var originalCpfCnpj = cpfCnpj.val();
+
+    if (originalCpfCnpj.indexOf(".") === -1) {
+        if (originalCpfCnpj.length === 11) {
+            var chunks = [];
+
+            for (var i = 0, charsLength = originalCpfCnpj.length; i < charsLength; i += 3) {
+                chunks.push(originalCpfCnpj.substring(i, i + 3));
+            }
+
+            originalCpfCnpj = chunks[0] + "." + chunks[1] + "." + chunks[2] + "-" + chunks[3];
+
+        } else if (originalCpfCnpj.length === 14) {
+            var parte1 = originalCpfCnpj.substring(0, 2);
+            var parte2 = originalCpfCnpj.substring(2, 5);
+            var parte3 = originalCpfCnpj.substring(5, 8);
+            var parte4 = originalCpfCnpj.substring(8, 12);
+            var parte5 = originalCpfCnpj.substring(12, 14);
+
+            originalCpfCnpj = parte1 + "." + parte2 + "." + parte3 + "/" + parte4 + "-" + parte5;
+        }
+
+        cpfCnpj.val(originalCpfCnpj);
+    }
+
+    fields[cpfCnpj.attr("id")].originalValue = originalCpfCnpj;
+
+    var emailInput = document.querySelector("#emailDadosCadastrais");
+    var originalEmail = emailInput.value;
+
+    // <------------------------------- Só mostra o dropzone se o CPF/CNPJ/documento mudou ------------------------>
+    var dropzoneActive = false;
+
+    var cpfCnpjChanged = false;
+
+    cpfCnpj.on("blur", function () {
+        if (!(cpfCnpj.val() === originalCpfCnpj)) {
+            cpfCnpjChanged = true;
+            showDropzone();
+        } else {
+            cpfCnpjChanged = false;
+            hideDropzone();
+        }
+    });
+
+    function showDropzone() {
+        dropzoneSection.removeClass("hidden");
+        dropzoneSection.addClass("fade show");
+        dropzoneActive = true;
+    }
+
+    function hideDropzone() {
+        if (!docChanged && !cpfCnpjChanged) {
+            dropzoneSection.removeClass("show");
+            dropzoneSection.addClass("hidden");
+            dropzoneActive = false;
+        }
+    }
+
+    var tipoDocumento, numDocumento, docChanged = false;
+
+    if (clienteVarejo) {
+        tipoDocumento = { element: document.querySelector("#tipoDocumentoDadosCadastrais") };
+        tipoDocumento.initialValue = tipoDocumento.element.value;
+
+        tipoDocumento.element.addEventListener("change", function () {
+            tipoDocumento.changed = (tipoDocumento.element.value !== tipoDocumento.initialValue);
+            checkDocChanges();
+        });
+
+        numDocumento = { element: document.querySelector("#numDocumentoDadosCadastrais") };
+        numDocumento.initialValue = numDocumento.element.value;
+
+        numDocumento.element.addEventListener("change", function () {
+            numDocumento.changed = (numDocumento.element.value !== numDocumento.initialValue);
+            checkDocChanges();
+        });
+    }
+
+    function checkDocChanges() {
+        if (numDocumento.changed) {
+
+            docChanged = true;
+            showDropzone();
+        } else {
+            docChanged = false;
+            hideDropzone();
+        }
+    }
+
+    function validate(errors) {
+       var email = $("#emailDadosCadastrais");
+       var dataNascimento = $("#nascimentoDadosCadastrais");
+       var tipoDocumento = $("#tipoDocumentoDadosCadastrais");
+       var numDocumento = $("#numDocumentoDadosCadastrais");
+       var orgaoEmissor = $("#orgaoEmissorDadosCadastrais");
+       var pais = $("#paisDadosCadastrais");
+       var uf = $("#ufDadosCadastrais");
+       var cpfCnpj = $("#cpfCnpjDadosCadastrais");
+       var taxType = $("#E_TAXTYPE");
+
+        if (!errors instanceof ErrorMessage) {
+            throw new Error("Objeto de erros não é instância de ErrorMessage");
+        }
+
+        if (telefone.length != 0 && celular.length != 0) {
+            if (!telefone.val() && !celular.val()) {
+                errors.add("Você deve preencher o telefone ou o celular.");
+            }
+        }
+
+        if (telefone.val()) {
+            setErroCampoInvalido(telefone, errors);
+        }
+
+        if (celular.val()) {
+            setErroCampoInvalido(celular, errors);
+        }
+
+        if (!email.val()) {
+            errors.add("O campo E-mail deve ser preenchido.");
+        } else {
+            setErroCampoInvalido(email, errors);
+        }
+
+        if (taxType.val() == "BR2") {
+            //CPF
+
+            //var filiacao1 = document.querySelector("#filiacao1DadosCadastrais"),
+             //   filiacao2 = document.querySelector("#filiacao2DadosCadastrais");
+
+            //if (filiacao1 && filiacao2) {
+               // if (!filiacao1.value && !filiacao2.value) {
+               //     errors.add("Você deve preencher uma das filiações.");
+               // }
+            //}
+
+            if (!dataNascimento.val()) {
+                errors.add("O campo Data de Nascimento deve ser preenchido.");
+            } else {
+                setErroCampoInvalido(dataNascimento, errors);
+            }
+
+            if (!tipoDocumento.val()) {
+                errors.add("O campo Tipo de Documento deve ser preenchido.");
+            }
+
+            if (!numDocumento.val()) {
+                errors.add("O campo Nº do Documento deve ser preenchido.");
+            }
+
+            if (!orgaoEmissor.val()) {
+                errors.add("O campo Órgão emissor deve ser preenchido.");
+            }
+
+            if (!pais.val()) {
+                errors.add("O campo País deve ser preenchido.");
+            }
+
+            if (pais.val() == "BR" && !uf.val()) {
+                errors.add("O campo UF deve ser preenchido.");
+            }
+
+        }
+
+        if (!cpfCnpj.val()) {
+            if (taxType.val() == "BR1") {
+                errors.add("O campo CNPJ deve ser preenchido.");
+            } else {
+                errors.add("O campo CPF deve ser preenchido.");
+            }
+        } else if (cpfCnpj.val().trim() == "00.000.000/0000-00") {
+            errors.add("CNPJ inválido.");
+        } else {
+            setErroCampoInvalido(cpfCnpj, errors);
+        }
+
+        var files = dropzone.getFiles();
+        if ((docChanged || cpfCnpjChanged) && files.length == 0) {
+            if (docChanged) {
+                errors.add("Você deve adicionar uma imagem do documento alterado.");
+            }
+
+            if (cpfCnpjChanged) {
+                if (taxType.val() == "BR1") {
+                    errors.add("Você deve adicionar uma imagem do CNPJ alterado.");
+                } else {
+                    errors.add("Você deve adicionar uma imagem do CPF alterado.");
+                }
+            }
+        }
+
+        if (errors.hasErrors()) {
+            return false;
+        }
+
+        var altered = isAltered();
+
+        return [
+            { key: "DadosCadastrais.AlterouDocumento", value: docChanged },
+            { key: "DadosCadastrais.AlterouCpfCnpj", value: cpfCnpjChanged },
+            { key: "DadosCadastrais.DocumentoAnexo", value: files[0] },
+            { key: "DadosCadastrais.Altered", value: altered }
+        ];
+        
+    }
+
+    function isAltered() {
+        for (var id in fields) {
+            if (fields.hasOwnProperty(id)) {
+                var obj = fields[id];
+
+                if (obj.input.value != obj.originalValue) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function setErroCampoInvalido(el, errors) {        
+        var label = document.querySelector("label[for='" + el.attr("id") + "']");
+        var span = label.querySelector("span");
+        if (span && span.innerHTML != "") {
+            errors.add(span.innerHTML);
+        }           
+    }
+
+
+    return {
+        dropzone: dropzone,
+        validate: validate,
+        get altered() {
+            return isAltered();
+        },
+        get emailChanged() {
+            return !(originalEmail == emailInput.value);
+        }
+    };
+
+})(jQuery, ValidationHelper, Dropzone);

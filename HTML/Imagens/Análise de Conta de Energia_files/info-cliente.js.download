@@ -1,0 +1,191 @@
+﻿(function () {
+    'use strict';
+
+    //espera tudo carregar para pegar o modalInstalacoesController.
+    window.addEventListener("load", function () {
+
+        // ----------------------------- Selecionar Instalação -----------------------------------
+        var modalInstalacoes = new ModalController({ overlayId: "modalInstalacoes-selecionar-instalacoes" });
+        var ativaInstalacao = document.querySelector("#ativaInstalacao");
+
+        if (ativaInstalacao) {
+            ativaInstalacao.addEventListener("click", function () {
+                modalInstalacoes.showLoader();
+                loadInstalacoes();
+            });
+        }
+
+        var formInstalacoes;
+
+        var partialLoader = document.querySelector("#selecionarInstalacaoPartialLoader");
+        
+        function showPartialLoader() {
+            if (formInstalacoes) {
+                partialLoader = document.querySelector("#selecionarInstalacaoPartialLoader");
+
+                if (partialLoader) {
+                    Animations.fadeIn(partialLoader);
+                }
+            }
+        }
+
+        function loadInstalacoes() {
+            var params = "";
+            //primeira vez não tem o formInstalacoes ainda
+            if (formInstalacoes) {
+                params = "?busca=" + formInstalacoes.querySelector("#busca").value.trim()
+                       + "&contrato=" + formInstalacoes.querySelector("input[name='contrato']:checked").value;
+            }
+
+            showPartialLoader();
+
+            $.ajax({
+                url: window.rootPath + "SelecionarInstalacao" + params,
+                method: 'GET',
+                success: loadModalInstalacoes
+            });
+        }
+
+        function loadModalInstalacoes(response) {
+            modalInstalacoes.setContent(response);
+
+            formInstalacoes = document.querySelector("form#formSelecionarInstalacao");
+
+            addInstalacaoEvents(formInstalacoes);
+
+            formInstalacoes.addEventListener("submit", onInstalacaoFormSubmit);
+        }
+
+        function onInstalacaoFormSubmit(event) {
+            var instalacao = formInstalacoes.querySelector("input[name='instalacaoSelecionada']:checked");
+            var tipoContrato = formInstalacoes.querySelector("input[name='contrato']:checked");
+
+            if (instalacao == null) {
+                stopEvent(event);
+                var msgInfo = document.getElementById('msg-info');
+                msgInfo.innerHTML = "Selecione pelo menos uma instalação";
+                msgInfo.classList.add("error");
+                msgInfo.classList.remove("hide");
+                msgInfo.classList.add("fade");
+                msgInfo.classList.add("show");
+                
+                return false;
+            }
+
+            var outerParent = instalacao.parentNode.parentNode;
+            var contaContrato = outerParent.querySelector(".instalacao-conta-contrato").innerHTML;
+            var contrato = outerParent.querySelector(".instalacao-contrato").innerHTML;            
+
+            modalInstalacoes.showLoader();
+            $.ajax({
+                url: formInstalacoes.action,
+                cache: false,
+                method: 'POST',
+                processData: false,
+                data: "instalacaoSelecionada=" + instalacao.value + "&tipoContrato=" + tipoContrato.value + "&contrato=" + contrato + "&contaContrato=" + contaContrato,
+                contentType: "application/x-www-form-urlencoded",
+                success: function (response) {
+                    modalInstalacoes.close();
+                    location.reload();
+                },
+                error: function (response) {
+                    console.log(response);
+                }
+            });
+
+            return stopEvent(event);
+        }
+
+        function addInstalacaoEvents(formInstalacoes) {
+            var radios = formInstalacoes.querySelectorAll("input[name='contrato']");
+            for (var i = 0; i < radios.length; i++) {
+                radios[i].addEventListener("change", instalacaoRadioChanged);
+            }
+
+            ValidationHelper.onlyNumbers("#btnBusca");
+
+            var btnBusca = formInstalacoes.querySelector("#btnBusca");
+            btnBusca.addEventListener("click", loadInstalacoes);
+        }
+
+        function instalacaoRadioChanged() {
+            if (this.checked) {
+                loadInstalacoes();
+            }
+        }
+
+        // ---------------------------------- Selecionar Cliente ------------------------------
+        var btnSelecionarCliente = document.querySelector("#selecionarCliente");
+
+        function loadClientes() {
+            $.ajax({
+                url: window.rootPath + "SelecionarCliente",
+                method: 'GET',
+                success: loadModalClientes
+            });
+        }
+
+        function loadModalClientes(response) {
+            modalClientes.setContent(response);
+
+            formClientes = document.getElementById("formSelecionarCliente");
+            var button = document.querySelector("#btnModalClienteContinuar");
+
+            button.addEventListener("click", onClienteFormSubmit);
+        }
+
+        function onClienteFormSubmit(event) {
+
+            var cliente = formClientes.querySelector("input[name='clienteSelecionado']:checked");
+            if (cliente == null) return stopEvent(event);
+            var pnLogado = "00" + document.getElementById('pnLogado').value;
+            var cpfLogado = document.getElementById('cpfLogado').value;
+            var urlSua = document.getElementById('urlSua').value;
+            
+            if (pnLogado != cliente.value) {
+
+                SUA$.init({
+                    urlBaseSUA: urlSua,
+                    urlBaseCanal: location.href,
+                    fullscreen: false,
+                    sessionExpired: function(){}
+                });
+                
+                SUA$.changeClientWithoutLoginScreen(cliente.value, "Z52",{
+                    onConcluido: function (data) {
+                        document.cookie = "isAssociado=" + data.isAssociado + ";path=/";
+                        window.location.href = window.rootPath + 'Autenticacao/LoginSUA?acao=Index&amp;controlador=Home';
+                        new ModalController({ overlayId: "loginLoader" }).iframeLoader();
+                    }
+                });
+                modalClientes.close();
+
+
+            } else {
+                modalClientes.close();
+            }
+
+            return stopEvent(event);
+        }
+        
+        if (btnSelecionarCliente) {
+            var modalClientes = new ModalController({ overlayId: "modal-clientes" });
+
+            btnSelecionarCliente.addEventListener("click", function () {
+                modalClientes.showLoader();
+                loadClientes();
+            });
+
+            var formClientes;
+        }
+
+        
+    });
+
+    function stopEvent(event) {
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+    }
+
+})();
