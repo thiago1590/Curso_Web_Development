@@ -25,4 +25,13 @@ aprovados.splice(3,1) //remove
 //slice
 const aprovados2 = pilotos.slice(2,4) //novo array a partir da pos 2 até 3
 
+//forEach é usado para executar uma função p/ cada elemento
+
+//map é usado p/ para executar uma função a cada elemento e criar um novo array 
+
+//Filter irá filtrar criando classificaçoes
+
+//reduce possui acumulador 
+
+//concat para concatenar
 
