@@ -48,5 +48,53 @@ border-style: solid;
         center top
      }
 </style>
+<!-- Inline-block-->
+<style>
+    .borda{
+    display: inline;
+    /*Ou*/
+    display:block;
+    /*Ou*/
+    display:inline-block;/*se comporta como coluna mas preenche 
+                            apenas o conteudo*/
+    }
+</style>
+
+<!--Posicionamento-->
+<!--
+    estático: é o padrão
+    relative: posiciona baseado na posição inicial do elemento
+    absolute: remove a caixa do fluxo e alinha baseado no container
+    fixed: é alinhado baseado na tela e é fixo na rolagem
+-->
+
+<!--sobrepondo-->
+<style>
+    .conteudo1{
+        z-index: 2;
+    }
+    conteudo2{
+        z-index: 1;
+    }
+</style>
+
+<!--Links-->
+<style>
+    a{
+        padding: 5px 10px;
+        text-decoration: none;
+    }
+    a:link, a:visited{      /*padrão/*        
+        color:#b9c941;
+     }
+    a:hover{             /* qnd passa o cursor sobre*/
+        color: #FFF;
+        background: #6d790f;
+    }
+    a:active{            /* qnd clica */
+        color: #e4f371;
+    }
+    
+</style>
 
 
