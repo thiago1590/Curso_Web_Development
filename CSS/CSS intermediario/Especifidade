@@ -1,0 +1,10 @@
+especifidade
+Se um seletor for mais especifico que outro a regra mais especifica 
+sera aplicada
+*{}
+h1{}
+(h1 tem prioridade)
+
+h2.verde{}
+h2#amarelo{}
+(id tem prioridade a classe)
