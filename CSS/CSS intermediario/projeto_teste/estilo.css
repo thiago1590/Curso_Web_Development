@@ -1,0 +1,42 @@
+*{
+    margin:0;
+    padding:0;
+    list-style-type: none;
+}
+
+#cabecalho{
+    background-color: #006b5a;
+    line-height: 70px;
+}
+
+#cabecalho a:link, #cabecalho a:visited{
+    padding: 10px;
+    margin: 20px;
+}
+#conteudo-cabecalho{
+    width: 64%;
+    position: relative;
+    left: 100px;
+    margin: 0 auto;
+}
+
+#navegacao{
+    padding: 14px;
+    text-align: center;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-bottom-color: teal;
+}
+#navegacao a{
+    margin: 15px;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+#navegacao a:link, #navegacao a:visited{
+    color: grey;
+}
+
+#imagem1{
+    margin: 28px auto;
+    width: 95%;
+}

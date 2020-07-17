@@ -6,7 +6,7 @@ ul{
 }
 
 ul a{
-    
+    border: 2px solid red;
     width: 200px;
     height: 40px;
     display: block;
