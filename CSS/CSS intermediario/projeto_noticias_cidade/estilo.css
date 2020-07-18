@@ -1,0 +1,154 @@
+*{
+    margin:0px;
+    padding: 0px;
+}
+
+body{
+    font-family: "Trebuchet MS", Helvetica, sans-serif;
+    background: #fff url(images/fundo.png) repeat-x;
+}
+
+#cabecalho{
+    height: 200px;
+    background: url(images/detalhe-topo.png) no-repeat;
+    background-position: 75% 70%;
+}
+
+#conteudo-cabecalho{
+    width: 50%;
+    margin: 0 auto;
+    padding-top: 25px;
+}
+ul{
+    list-style: none;
+}
+
+#cabecalho ul{
+    margin-top: 30px;
+    background-color: #b10333;
+    float: left;
+}
+#cabecalho ul li{
+    float: left;
+}
+
+#cabecalho ul a:hover{
+    color: #69001d;
+}
+
+body.home #navegacao a#home,
+body.brasil #navegacao a#brasil,
+body.internacional #navegacao a#internacional,
+body.fotos #navegacao a#fotos
+{
+    color: #fff;
+    background: #de003e;
+    cursor: text;
+}
+
+#cabecalho a{
+    font-size: 0.9em;
+    float: left;
+    display: block;
+    line-height: 2.1em;
+    padding: 0.5em 1.5em ;
+    color: white;
+    background: url(images/divisor.png) repeat-y;
+}
+#area-esquerda li{
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 0, 0, .1);
+}
+#principal{
+    padding-top: 20px;
+    margin: 20px auto;
+    width: 50%;
+}
+#area-esquerda{
+    width: 22%;
+    float: left;
+}
+#area-direita{
+    
+    width: 75%;
+    float: right;
+}
+#area-conteudo{
+    width: 48%;
+    float: left;
+    
+}
+#coluna-direita{
+    width: 48%;
+    float: right;
+}
+.titulo{
+    background-color: #294c71;
+    padding: 5px;
+    margin: 5px;
+}
+.texto-titulo{
+    color: white;
+    font-size: 1em;
+    font-weight: bold;
+}
+
+.conteudo{
+    padding: 5px;
+    margin-bottom: 20px;
+}
+a{
+    text-decoration: none;
+    color: black;
+}
+a:hover{
+    background-color: #f9f9f9;
+    color: #a1a1a1;
+}
+#titulo-noticia{
+    background-color: #b10333;
+    font-size: 0.8em;
+    display: inline-block;
+    padding: 2px;
+}
+
+#submit{
+    background-color: #b10333;
+    color: white;
+    padding: 5px;
+}
+#noticia-secundaria{
+    padding-left: 10px;
+    clear: both;
+    margin-top: 5px;
+}
+.img-noticias-secundarias{
+float: left;
+width: 33%;
+}
+.conteudo-noticias-secundarias{
+width: 63%;
+float: right;
+}
+.titulo-noticias-secundarias{
+    font-size: 0.8em;
+    font-weight: bold;
+    color: blueviolet;
+}
+.texto-noticias-secundarias{
+    font-size: 0.8em;
+}
+#copyright{
+    border: 1px solid red;
+    clear: both;
+    height: 60px;
+    background-color: #294c71;
+}
+
+#texto-copyright{
+    padding: 15px;
+    width: 400px;
+    margin-left: 25%;
+    color: white;
+    font-size: 1.1em;
+}
