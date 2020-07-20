@@ -1,0 +1,22 @@
+criar uma div container q engloba td o conteudo do site
+
+images em background nao atrapalha o conteudo e é possivel configurar right top, left bottom etc
+
+text-indent para posicionar texto para esquerda ou direita
+
+para acessibilidade: botar logos dentro de um h1, estilizar esse h1 colocando a imagem como background e usar text-indent para jogar o texto do h1 para fora da tela
+
+margin e padding das listas nao sao removidas no geral
+
+usar float left na ul,li,a para criar navegação horizontal
+background fica no ul, line-height e padding no a, usar imagem de divider como background do a
+
+outra forma de criar as colunas com layout fixo é selecionar a largura dps dividir pelo numero de colunas, deixando espaço para as margins. Depois usar float left para todos
+
+usar h2,h3,etc para titulos  e configurar o estilo como #id_qualquer h2{}
+
+identificar padroes para usar apenas um estilo base e evitar repetiçoes
+
+pesquisar como organizar codigo css
+
+pesquisar como programação é prejudicial para olhos

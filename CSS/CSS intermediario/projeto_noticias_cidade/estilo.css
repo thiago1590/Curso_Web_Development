@@ -55,18 +55,68 @@ body.fotos #navegacao a#fotos
     color: white;
     background: url(images/divisor.png) repeat-y;
 }
-#area-esquerda li{
+.caixa li{
     padding: 10px;
     border-bottom: 1px solid rgba(255, 0, 0, .1);
+    background-color: white;
+    margin: 3px;
 }
+.caixa ul a:hover{
+    background: #f9f9f9 url(images/marcador.png) no-repeat left center;
+    padding-left: 20px;
+    color: #a1a1a1;
+}
+
 #principal{
     padding-top: 20px;
     margin: 20px auto;
     width: 50%;
 }
-#area-esquerda{
-    width: 22%;
+.caixa{
+    width: 23%;
     float: left;
+}
+
+#lista-noticias{
+    padding-left:10px;
+}
+
+#lista-noticias li{
+    padding:2px;
+    border-bottom: 1px solid #ccc;
+    height: 65px;
+    
+}
+
+#lista-noticias li a img{
+    float: left;
+    margin-right: 5px;
+}
+
+#lista-noticias li a{
+    text-decoration: none;
+}
+
+#lista-noticias li h3{
+    font-size: 0.8em;
+    color: #3e7ab9;
+}
+
+#lista-noticias li p{
+    font-size: 0.7em;
+}
+
+#lista-noticias li:hover{
+    background: #eee;
+    cursor: pointer;
+}
+
+
+
+#caixa-input{
+    padding-left: 10px;
+    background-color: white;
+    margin: 3px;
 }
 #area-direita{
     
@@ -93,6 +143,11 @@ body.fotos #navegacao a#fotos
     font-weight: bold;
 }
 
+.caixa{
+    margin: 10px 0;
+    background: #f3f3f3 url(images/fundo-caixa.png);
+}
+
 .conteudo{
     padding: 5px;
     margin-bottom: 20px;
@@ -117,27 +172,7 @@ a:hover{
     color: white;
     padding: 5px;
 }
-#noticia-secundaria{
-    padding-left: 10px;
-    clear: both;
-    margin-top: 5px;
-}
-.img-noticias-secundarias{
-float: left;
-width: 33%;
-}
-.conteudo-noticias-secundarias{
-width: 63%;
-float: right;
-}
-.titulo-noticias-secundarias{
-    font-size: 0.8em;
-    font-weight: bold;
-    color: blueviolet;
-}
-.texto-noticias-secundarias{
-    font-size: 0.8em;
-}
+
 #copyright{
     border: 1px solid red;
     clear: both;

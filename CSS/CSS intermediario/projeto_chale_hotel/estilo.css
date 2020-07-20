@@ -1,0 +1,96 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+a{
+    text-decoration: none;
+}
+
+h3{
+    color: #615b5e;
+}
+
+body{
+    font-family: Helvetica, "Trebuchet MS", sans-serif;
+    background: #fff;
+    margin: 15px;
+}
+
+#container{
+    margin: 0 auto;
+    max-width: 1200px;
+}
+
+
+#imagem-principal-topo{
+    background: url(images/topo-imagem-principal.png) no-repeat;
+    width: 62%;
+    height: 250px;
+    line-height: 100%;
+    float: left;
+}
+#area-direita-topo{
+    background-color:#dfd493;
+    height: 250px;
+    width: 38%;
+    float: left;
+}
+#reservar{
+    padding: 20px;
+}
+    #reservar p{
+        font-size: 0.7em;
+    }
+#navegacao{
+    padding: 15px;
+}
+    #navegacao a{
+    color: black;
+    font-size: 0.8em;
+    float: left;
+};
+    #navegacao-img{
+        float: left;
+    }
+
+#conteudo-principal{
+    clear: both;
+    background: url(images/bg-container.png)  center;
+    padding: 10px;
+}
+#conteudo-principal-esquerda{
+    float: left;
+    width: 50%;
+}
+#conteudo-principal-direita{
+    float: left;
+    width: 50%;
+}
+    #conteudo-principal-direita ul{
+        margin-bottom: 15px;
+        margin-left: 15px;
+    }
+
+    #conteudo-principal-direita li{
+        border-bottom: 1px solid white;
+        clear: both;
+        padding: 10px 10px;
+    }
+    #conteudo-principal-direita img{
+        float: left;
+        margin-right: 10px;
+    }
+    #conteudo-principal-direita p{
+        padding-bottom: 35px;
+        font-size: 0.8em;
+        color: black;
+    }
+    #conteudo-principal-direita li:hover{
+        background-color: #f6f3d6;
+    }
+    
+
+#copyright{
+    clear: both;
+}
