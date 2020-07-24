@@ -1,0 +1,141 @@
+*{
+    padding: 0;
+    margin: 0;
+}
+
+body{
+    background: #f4f2ec url(images/fundo.png) repeat-x;
+    font: 12px "Lucida Grande", "Lucida Sans Unicode", Arial, sans-serif;
+}
+h3{
+    color: #9d6813;
+    font-size: 0.8em;
+    text-transform: uppercase;
+}
+a{
+    text-decoration: none;
+}
+#container{
+width: 1080px;
+margin: 30px auto;
+}
+
+header {
+    margin-bottom: 20px;
+    }
+    header a{
+    float: left;
+    color: #9d6813;
+    text-transform: uppercase;
+    }
+    header a:hover{
+    border-bottom: 1px solid #535858;
+    }
+    header ul{ 
+    margin-right: 30px;
+    float: right;
+    }
+    header ul li{
+    float: left;
+    margin: 0 15px;
+    list-style: none;
+    }
+
+#titulo1{
+    font-size: 2em;
+    color: white;
+}
+#titulo2{
+    font-size: 2em;
+    color: #9d6813;
+}
+#imagens-principais{
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+#video-mapa{
+    margin: 10px 0 25px 0 ;
+}
+#area-conteudo{
+    float: left;
+    width: 710px;
+}
+.conteudo{
+    width: 45%;
+    padding-left: 20px;
+    float: left;
+}
+    .conteudo ul{
+        padding-left: 30px;
+        margin-top: 15px;
+    }
+    .conteudo a{
+        color: #227115;
+        font-size: 0.9em;
+    }
+    .conteudo p{
+        font-size: 0.9em;
+        padding: 10px 5px;
+    }
+#area-direita{
+    float: right;
+    width: 350px;
+    background-color: #cdc8b1;
+}
+#visita{
+    padding: 25px;
+}
+    #botao{
+    font-size: 1.1em;
+    color: white;
+    border: none;
+    width: 300px;
+    padding: 10px 0;
+    background-color: #9b9271;
+    }
+    #input{
+    margin: 10px 0;
+    }
+
+#galeria{
+    background: #f4f2ec;
+    padding: 15px;
+}
+#area-foto{
+    float: left;
+    margin-top: 10px;
+    margin-left: 15px;
+}
+#foto{
+    width: 130px;
+    height: 130px;
+    background: url(images/fundo-foto.png) no-repeat;
+}
+    #foto img{
+        margin: 17px;
+    }
+footer{
+    border-top: 1px solid orange;
+    width: 650px;
+    margin: 0 auto;
+}
+    footer ul{
+        list-style: none;
+    }
+    footer ul li{
+        float: left;
+        font-size: 0.9em;
+        margin: 10px;
+    }
+    footer ul li a{
+        font-size: 0.9em;
+    }
+    footer p{
+        clear: both;
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+
+
