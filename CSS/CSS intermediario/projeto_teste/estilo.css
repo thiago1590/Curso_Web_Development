@@ -1,18 +1,34 @@
 *{
     margin:0;
     padding:0;
-    list-style-type: none;
+    list-style: none;
 }
 
 #cabecalho{
     background-color: #006b5a;
     line-height: 70px;
 }
+    #cabecalho ul{
+    float: left;
+    }
+    #cabecalho ul li{
+    float: left;
+    margin: 0 20px;
+    }
+    #cabecalho ul li img{
+    margin: -10px 10px;
+    }
+    #cabecalho a{
+        text-decoration: none;
+        color: white;
+    }
+    #cabecalho input{
+        height: 50px;
+        width: 450px;
+        border-radius: 35px;
+        border: none;
+    }
 
-#cabecalho a:link, #cabecalho a:visited{
-    padding: 10px;
-    margin: 20px;
-}
 #conteudo-cabecalho{
     width: 64%;
     position: relative;
@@ -25,7 +41,7 @@
     text-align: center;
     border-bottom-style: solid;
     border-bottom-width: 1px;
-    border-bottom-color: teal;
+    border-bottom-color: rgba(50, 165, 54, 0.2);
 }
 #navegacao a{
     margin: 15px;
@@ -39,4 +55,18 @@
 #imagem1{
     margin: 28px auto;
     width: 95%;
+}
+#corpo{
+    border: 1px solid red;
+    margin: 0 auto;
+    width: 80%;
+}
+#descontos h4{
+    color: #006b5a;
+}
+#descontos p{
+    color: #006b5a;
+}
+#excessao{
+    color: black;
 }
