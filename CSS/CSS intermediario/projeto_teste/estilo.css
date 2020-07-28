@@ -3,6 +3,9 @@
     padding:0;
     list-style: none;
 }
+body{
+    background: #f2f2f2;
+}
 
 #cabecalho{
     background-color: #006b5a;
@@ -57,16 +60,92 @@
     width: 95%;
 }
 #corpo{
-    border: 1px solid red;
     margin: 0 auto;
-    width: 80%;
+    width: 85%;
+}
+#area-texto{
+    width: 30%;
+    height: 80px;
+    padding: 15px;
+    float: left;
 }
 #descontos h4{
     color: #006b5a;
+    float: left;
+    margin-right: 10px;
 }
-#descontos p{
+#pagamento-info{
     color: #006b5a;
+    margin-left: 15px;
+    float: left;
 }
 #excessao{
-    color: black;
+    clear: both;
+    color: rgb(0,0,0,0.9);
+}
+
+#nav2 ul{
+    float: left;
+    margin: 0 auto;
+}
+#nav2 ul li{
+    margin: 10px 20px ;
+    float: left;
+    border-radius: 5px;
+    padding: 8px 54px;
+    background:#e2d5cf ;
+}
+#nav2 ul li a{
+    text-decoration: none;
+    font-size: 0.9em;
+}
+#lancamento{
+    clear: both;
+    width: 100%;
+    height: 200px;
+    background: #f5f2f2;
+}
+#lancamento h1{
+    padding-top: 50px;
+    text-align: center;
+    color: #016655;
+    font-size: 3em;
+}
+#lancamento p{
+    text-align: center;
+    color: #016655;
+    padding-top: 15px;
+}
+#img{
+    margin-left:43%;
+}
+#area-produtos{
+    width: 85%;
+    margin: 70 auto;
+}
+#produto{
+width: 19%;
+height: 450px;
+float: left;
+margin-left:50px ;
+margin-bottom: 20px;
+border-radius: 15px;
+background-color: white;
+padding:10px;
+}
+    #produto h3{
+    margin-top: 5px;
+    font-size: 18px;
+    text-align: center;
+    color: rgb(0,0,0,0.8);
+    }
+    #produto p{
+        font-size: 18px;
+        color: #009d4e;
+        }
+#destaques-semana{
+    width: 98%;
+    margin-left: 1%;
+    margin-top: 80px;
+    display: inline-block;
 }
