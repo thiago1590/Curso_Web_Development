@@ -1,12 +1,14 @@
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
     <!--CSS-->
     <link rel="stylesheet" href="estilo.css">
@@ -14,46 +16,194 @@
     <!--Font Awesome-->
     <script src="https://kit.fontawesome.com/833591d3ed.js" crossorigin="anonymous"></script>
 
-    <title>Hello, world!</title>
-  </head>
-  <body>
+    <title>Musica para todos - Spotify</title>
+    <link rel="icon" href="images/favicon.png">
+</head>
+
+<body>
+
     <header>
-        <nav class="navbar navbar-expand-sm bg-primary navbar-dark">
+        <nav class="navbar navbar-expand-md navbar-light fixed-top" id="nav">
             <div class="container">
+
                 <!--Logo-->
                 <a class="navbar-brand mr-auto" href="">
-                    <img src="images/spotify.svg" style="width: 140px;" alt="">
+                    <img class="navbar-brand" src="images/spotify.svg" style="width: 142px;" alt="">
                 </a>
 
-                <ul class="navbar-nav">
-                    <li class="navbar-item">
-                        <a  class="nav-link" href="">Premium</a>
-                    </li>
-                    <li  class="nav-item">
-                        <a  class="nav-link" href="">Ajuda</a>
-                    </li>
-                    <li  class="nav-item">
-                        <a  class="nav-link" href="">Baixar</a>
-                    </li>
-                    <li  class="nav-item">
-                        <a  class="nav-link" href="">|</a>
-                    </li>
-                    <li  class="nav-item">
-                        <a  class="nav-link" href="">Inscrever-se</a>
-                    </li>
-                    <li  class="nav-item">
-                        <a  class="nav-link" href="">Entrar</a>
-                    </li>
-                </ul>
+                <!--Menu Hamburguer-->
+                <button class="navbar-toggler" data-toggle="collapse" data-target="#nav-target">
+                    <i class="fas fa-bars text-white"></i>
+                </button>
+
+                <!--Navegação-->
+                <div class="collapse navbar-collapse" id="nav-target">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="navbar-item">
+                            <a class="nav-link" href="">Premium</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">Ajuda</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">Baixar</a>
+                        </li>
+
+                        <li class="nav-item divisor">|</li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="">Inscrever-se</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">Entrar</a>
+                        </li>
+                    </ul>
+                </div>
+                <!--Fim Navegação-->
+
             </div>
         </nav>
     </header>
+    <!--Fim Header-->
+
+    <section id="home" class="d-flex">
+        <!--Início Home-->
+        <div class="container align-self-center">
+            <div id="carousel-controle" class="carousel slide" data-ride="carousel">
+                <!--Carousel-->
+                <div class="carousel-inner">
+                    <!--Inner-->
+
+                    <div class="carousel-item active">
+                        <div class="row">
+                            <div class="col-md-12 capa">
+                                <h1>Música para todos</h1>
+                                <a href="" class="btn btn-custom btn-roxo btn-lg">
+                                    Aproveite o Spotify Free
+                                </a>
+                                <a href="" class="btn btn-custom btn-branco btn-lg">
+                                    Obter Spotify Premium
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="row">
+                            <div class="col-md-12 capa">
+                                <h1>As melhores rádios</h1>
+                                <a href="" class="btn btn-custom btn-branco btn-lg">
+                                    <span><i class="fas fa-music"></i> </span>
+                                    <span>ouça agora</span>
+
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!--/Inner-->
+                    <a href="#carousel-controle" class="carousel-control-prev" data-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </a>
+
+                    <a href="#carousel-controle" class="carousel-control-next" data-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </a>
+                </div>
+                <!--/Carousel-->
+
+
+            </div>
+    </section>
+    <!--Fim Home-->
+
+    <!--Inicio Servicos-->
+    <section id="servicos">
+        <div class="container">
+
+            <div class="row">
+                <!--Inicio Conteudo-->
+
+                <!--Galeria Albuns-->
+                <div class="col-md-6">
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+                            <img src="images/img1.jpg" alt="" class="img-fluid">
+                        </div>
+                        <div class="col-md-6">
+                            <img src="images/img2.jpg" alt="" class="img-fluid">
+                        </div>
+                    
+                        <div class="col-md-6">
+                            <img src="images/img3.jpg" alt="" class="img-fluid">
+                        </div>
+                        <div class="col-md-6">
+                            <img src="images/img4.jpg" alt="" class="img-fluid">
+                        </div>
+                    </div>
+                </div>
+
+                <!--Fim galeria Albuns-->
+                <div class="col-md-6">
+                    <h2>O que o Spotify tem?</h2>
+
+                    <h3>Músicas</h3>
+                    <p>O Spotify tem milhões de músicas. Escute seus sons favoritos, descubra novas músicas e reúna seus
+                        favoritos em um só lugar.</p>
+
+                    <h3>Playlists</h3>
+                    <p>No Spotify você encontra uma playlist para cada momento. Todas feitas por fanáticos e
+                        especialistas da música.</p>
+
+                    <h3>Novos Lançamentos</h3>
+                    <p>Escute os novos lançamentos de singles e álbuns da semana e veja o que está bombando no Top 50.
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--Fim Servicos-->
+
+    <section>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h2>Fácil</h2>
+                    <h3>Buscar</h3>
+                    <p>Já sabe o que quer escutar? É só procurar e apertar o play.</p>
+
+                    <h3>Navegar</h3>
+                    <p>Veja os novos lançamentos, o que está bombando nas paradas e as melhores playlists para o seu momento.</p>
+                
+                    <h3>Descobrir</h3>
+                    <p>Curta músicas novas toda segunda-feira com uma playlist personalizada pra você. Ou relaxe e curta uma das rádios.</p>
+                </div>
+                <div class="col-md-6">
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+
+
+
 
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
-  </body>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+</body>
+
 </html>
