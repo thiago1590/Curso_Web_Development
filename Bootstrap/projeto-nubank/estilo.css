@@ -1,0 +1,12 @@
+/*--------Header---------*/
+nav ul li{
+    padding: 3px;
+}
+nav ul li a{
+    font-size: 1.1em;
+    font-weight:500;
+    color: rgb(122, 105, 105);
+}
+body{
+    background: yellow;
+}

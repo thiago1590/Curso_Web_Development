@@ -97,5 +97,43 @@ h3{
     color: #7c25f8;
 }
 
+/*-------Recursos--------*/
+#recursos h3,p{
+    color: #9bf0e1;
+}
+#recursos h2{
+    color: white;
+}
+.rotacionar{
+    transform: rotate(30deg);
+    padding-left: 80px 0px 20px 0px;
+}
 
+/*-------Rodapé--------*/
+footer {
+    background: #000;
+    padding: 50px ;
+    position: relative;
+}
+footer h4{
+    font-size: 0.8em;
+    text-transform: uppercase;
+    color: #919496;
+}
+footer .navbar-nav a{
+    color: white;
+    font-size: 0.8em;
+}
 
+footer .navbar-nav a:hover{
+    color: #9bf0e1;
+    text-decoration: none;
+}
+footer ul{
+    list-style: none;
+    float: right;
+}
+footer ul li{
+    float: right;
+    margin: 0 5px;
+}

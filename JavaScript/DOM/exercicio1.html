@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EX1</title>
+    <style>
+        div{
+            padding-top:1px ;
+            margin: 15px auto;
+            text-align: center;
+            height: 400px;
+            width: 500px;
+            background: rgb(123, 123, 165);
+        }
+        h1{
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="div">
+        <h1>Número ou Letra?</h1>
+        <input id="entrada" onkeyup="func()" placeholder="Digite um caracter aqui" type="text"><br><br>
+        <span><input type="text" id="num"></span>
+        <span><input type="text" id="letra"></span>
+    </div>
+</body>
+<script>
+    function func(){
+        var caracter = document.getElementById('entrada').value
+        document.getElementById('entrada').value = ''
+        switch(caracter){
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            document.getElementById('num').value = caracter
+            break;
+            default:
+            document.getElementById('letra').value = caracter
+        }
+    }
+</script>
+</html>

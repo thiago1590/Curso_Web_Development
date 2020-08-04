@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <style>
+        #div1{
+            padding-top: 10px ;
+            text-align: center;
+            margin: 25px auto;
+            width: 500px;
+            height: 400px;
+            background-color: rgb(192, 192, 226);
+        }
+        h1{
+            color: white;
+            margin-bottom: 25px;
+        }
+        #div2{
+            margin: 45px auto;
+            width: 150px;
+            height: 150px;
+            background-color: white;
+            border: 1px solid white;
+        }
+    </style>
+</head>
+<body>
+    <div id="div1">
+        <h1>Manipulando estilo</h1>
+            <button onclick="aplicarCor('#FF0000')" class="btn btn-danger">Vermelho</button>
+            <button onclick="aplicarCor('#00FF00')" class="btn btn-success">Verde </button>
+            <button onclick="aplicarCor('#0000FF')" class="btn btn-primary">Azul </button>
+            <div id="div2">
+                
+            </div>
+    </div>
+    
+</body>
+<script>
+function aplicarCor(cor){
+    document.getElementById('div2').style.background = cor
+}
+function calc(){
+    var numero
+    var numList =  []
+    var funcs = []
+    var operacoesList = []
+}
+function click(){
+    switch(caracter){
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        numero = numero + caracter
+        default:
+        numList.push(numero)
+        numero = 0
+        operacoesList.push(op)
+    }
+}
+function igual(){
+    for(i in numList){
+
+    }
+}
+</script>
+</html>
