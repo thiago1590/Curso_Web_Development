@@ -1,0 +1,18 @@
+no JavaScript nao é possível tornar um atributo privado ao objeto,
+portanto, usa-se a convenção _
+exemplo:
+class Tv {
+            constructor() {
+                this._relacaoCanais = Array(2,4,5,6,10)
+                this._canalAtivo = 5
+                this._volume = 5
+            }
+        }
+os 3 atributos ainda podem ser acessados fora do objeto mas entende-se 
+que ao usar o _ isso nao deve ser feito diretamente
+
+Para acessar atributos privados fora do objeto deve-se usar getters e setters 
+por questoes de segurança
+na função set é comum implementar uma lógica para que o atributo só seja acessado
+caso satisfaça as condiçoes
+    
