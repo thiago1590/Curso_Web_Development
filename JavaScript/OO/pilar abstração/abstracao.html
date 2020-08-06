@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script>
+
+        /* 
+        let qtd_pernas = 4
+        let giratoria = false
+        let cor = 'azul'
+
+
+        function girar_cadeira(i){
+            
+                if(cadeiras[i]['giratoria'] ===true){
+                    console.log('girou')
+                }
+             else{
+                console.log('cadeira n é giratoria')
+            }
+        }
+
+
+        function adicionar_cadeira(qtd_pernas,giratoria,cor){
+            let cadeira = Array()
+
+            cadeira['qtd_pernas'] = qtd_pernas
+            cadeira['giratoria'] = giratoria
+            cadeira['cor'] = cor
+            cadeiras.push(cadeira)
+        }
+
+        adicionar_cadeira(3,false,'verde')
+        console.log(cadeiras)
+*/
+
+        //paradigma de OO
+        class Cadeira{
+            constructor(qtde_pernas,giratoria,cor){
+                this.qtde_pernas = qtde_pernas
+                this.giratoria = giratoria
+                this.cor = cor
+            }
+            girarCadeira(){
+                if(this.giratoria === true){
+                    console.log('girou')
+                } else{
+                    console.log('nao e giratoria')
+                }
+            }
+        }
+        let cadeira = new Cadeira(4,false,'azul')
+        let cadeira2 = new Cadeira(1,true,'vermelha')
+
+        class Sofa{
+            constructor(cor,qntde_lugares,reclinavel){
+                this.cor = cor
+                this.qntde_lugares = qntde_lugares
+                this.reclinavel = reclinavel
+            }
+            reclinar(){
+                if(this.reclinavel === true){
+                    console.log('é reclinavel')
+                } else{
+                    console.log('n inclina')
+                }
+            }
+        }
+        let sofa1 = new Sofa('marrom',4,false)
+        sofa1.reclinar()
+        console.log(sofa1)
+        
+    </script>
+</head>
+<body>
+    
+</body>
+</html>
