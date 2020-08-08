@@ -1,0 +1,14 @@
+usar position absolute para elementos que precisam ficar em cima de outros
+exemplo 
+#area-logo{
+position:absolute;
+top:0;
+left:0;
+}
+#area-menu{
+position:absolute;
+top:0;
+right:0;
+}
+
+estudar position css(relative,absolute etc)
