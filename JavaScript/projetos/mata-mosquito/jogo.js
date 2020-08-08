@@ -68,7 +68,6 @@ mosquito.style.position = 'absolute'
 mosquito.id = 'mosquito'
 mosquito.onclick = function(){this.remove()}
 
-
 document.body.appendChild(mosquito)
 }
 

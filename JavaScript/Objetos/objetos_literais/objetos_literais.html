@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <style>
+        #container{
+            width: 700px;
+            height: 450px;
+            margin: 10px auto;
+            background: rgb(181, 181, 192);
+            padding: 25px;
+        }
+        #btn{
+            margin-right: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <form>
+            <div class="form-group">
+                <label for="usuario">Nome:</label>
+                <input class="form-control" type="text" id="nome" placeholder="digite seu nome">
+            </div>
+            <div class="row ">
+                <div class="col md-6">
+                    <div class="form-group">
+                        <label for="idade">Idade:</label>
+                        <input class="form-control" type="text" id="idade" placeholder="digite sua idade">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="estados">Sexo</label>
+                        <select class="form-control" id="sexo">
+                            <option>Masculino</option>
+                            <option>Feminino</option>
+                            <option>Outro</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="profissao">Profissão</label>
+                <input class="form-control" type="text" id="profissao" placeholder="digite sua profissao">
+            </div>
+            <div class="row justify-content-end">
+                <input class="btn btn-primary" type="submit" value="Avançar" id="btn" onclick="exibir()">
+            </div>
+            
+        </form>
+    </div>
+</body>
+
+<script>
+        let nome = document.getElementById('nome').value
+        let idade = document.getElementById('idade').value
+        let sexo = document.getElementById('sexo').value
+        let profissao = document.getElementById('profissao').value
+
+        let objeto = {
+            nome: nome,
+            idade : idade,
+            sexo: sexo,
+            profissao : profissao,
+            exibir: exibir()
+        }
+        console.log(objeto)
+    
+    function exibir(){
+        
+
+        alert(`O nome do usuário é ${nome}, ele tem ${idade} anos, seu sexo é ${sexo} e ele é um/uma ${profissao} `)
+   }
+</script>
+</html>
