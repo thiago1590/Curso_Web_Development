@@ -1,0 +1,25 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+ul{
+    list-style: none;
+    float: left;
+    background: #007bff;
+    width: 100%;
+    margin-bottom: ;
+}
+li{
+    float: left;
+    margin-left: 15px;
+}
+a{
+    color: white;
+    line-height: 60px;
+}
+#area-conteudo{
+    margin-top: 30px;
+}
+form{
+    margin-top: 60px;
+}

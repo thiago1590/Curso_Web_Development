@@ -1,0 +1,2 @@
+é usado para recuperar atributos de outros objetos por herança
+aponta por padrao para o object(__proto__) que é na vdd uma função
