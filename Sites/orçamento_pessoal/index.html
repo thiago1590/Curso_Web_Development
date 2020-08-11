@@ -24,7 +24,7 @@
                 <img  style="margin-right: 10px;" src="logo.png" alt="">
             </a></li>
             <li><a href="">Cadastro</a></li>
-            <li><a href="">Consulta</a></li>
+            <li><a href="consulta.html">Consulta</a></li>
             </div>
         </ul>
         <div style="clear: both;"></div>
@@ -32,16 +32,17 @@
 
     <div id="area-conteudo" class="container">
         <h1 class="display-4">Registro de nova despesa</h1>
+
         <form>
-            <div class="row">
-                <div class="col-2">
-                    <select class="form-control">
+            <div class="row"> <!--Início linha1-->
+                <div class="col-md-2">
+                    <select class="form-control" id="ano">
                         <option value="">Ano</option>
                         <option>2020</option>
                     </select>
                 </div>
-                <div class="col-2">
-                    <select class="form-control">
+                <div class="col-md-2">
+                    <select class="form-control" id="mes">
                         <option value="">Mês</option>
                         <option>Janeiro</option>
                         <option>Fevereiro</option>
@@ -57,19 +58,62 @@
                         <option>Dezembro</option>
                     </select>
                 </div>
-                <div class="col-2">
-                    
+                <div class="col-md-2">
+                    <input type="text" class="form-control" id="dia" placeholder="Dia">
                 </div>
-                <div class="col-6">
-                    
+                <div class="col-md-6" >
+                    <select class="form-control" id="tipo">
+                        <option value="">Tipo</option>
+                        <option>Alimentação</option>
+                        <option>Educação</option>
+                        <option>Lazer</option>
+                        <option>Saúde</option>
+                        <option>Transporte</option>
+                    </select>
+                </div>
+            </div><!--Fim linha1-->
+
+            <div class="row mt-2"><!--Início linha2-->
+                <div class="col-md-8">
+                    <input type="text" id="descricao" placeholder="Descrição" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" id="valor" value="" placeholder="valor" class="form-control">
+                </div>
+                <div class="col-md-1"></div>
+                <div class="col-md-1">
+                    <button type="button" onclick="cadastrarDespesa()" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                    </button>
                 </div>
             </div>
         </form>
     </div>
+  
+  <!-- Modal -->
+  <div class="modal fade" id="ModalRegistro" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div id="corHeader">
+          <h5 class="modal-title" id="modal_titulo">Erro na gravação</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          Existem campos obrigatórios que não foram preenchidos
+        </div>
+        <div class="modal-footer">
+          
+          <button type="button" data-dismiss="modal" id="botao_voltar" >Voltar e corrigir</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
     
-
+    <script src="logica.js" ></script>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
