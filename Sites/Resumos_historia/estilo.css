@@ -1,0 +1,23 @@
+*{
+    padding: 0px;
+    margin: 0px;
+}
+
+header{
+    padding: 0 20px;
+    text-align: center;
+}
+    header h1{
+        color: brown;
+        font-size: 3.5em;
+    }
+
+#container-conteudo{
+    width: 85%;
+    margin: 0 auto;
+}
+
+#conteudo{
+    background: brown;
+    height: 100%;
+}
