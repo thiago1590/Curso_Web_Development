@@ -1,0 +1,18 @@
+p{
+    font-family: Arial, Helvetica, sans-serif;
+}
+header{
+    text-align: center;
+    margin-bottom: 30px;
+}
+header h1{
+    text-align: center;
+    font-size: 3.5em;
+}
+#conteudo{
+    width: 95%;
+    margin: 0 auto;
+}
+p{
+    margin: 5px;
+}
