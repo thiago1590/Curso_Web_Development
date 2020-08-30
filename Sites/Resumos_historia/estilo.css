@@ -2,6 +2,14 @@
     padding: 0px;
     margin: 0px;
 }
+a{
+    text-decoration: none;
+    color: black;
+}
+a:hover{
+    text-decoration: none;
+    color: black;
+}
 
 header{
     padding: 0 20px;
@@ -20,4 +28,16 @@ header{
 #conteudo{
     background: brown;
     height: 100%;
+}
+
+#escolha-resumo{
+    padding: 10px;
+    text-align: center;
+}
+    #escolha-resumo h2{
+        font-size: 2em;
+    }
+
+.texto{
+    text-align: center;
 }
