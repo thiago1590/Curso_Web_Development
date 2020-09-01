@@ -1,9 +1,12 @@
 p{
     font-family: Arial, Helvetica, sans-serif;
+    margin: 5px;
 }
 header{
     text-align: center;
     margin-bottom: 30px;
+    width: 60%;
+    margin: 0 auto;
 }
 header h1{
     text-align: center;
@@ -13,6 +16,6 @@ header h1{
     width: 95%;
     margin: 0 auto;
 }
-p{
-    margin: 5px;
+.space{
+    margin: 40px;
 }
