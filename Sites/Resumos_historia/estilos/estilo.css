@@ -12,11 +12,12 @@ a:hover{
 }
 
 header{
-    padding: 0 20px;
+    padding: 10px;
     text-align: center;
+    background: rgb(150, 75, 0);
 }
     header h1{
-        color: brown;
+        color: white;
         font-size: 3.5em;
     }
 
@@ -26,7 +27,6 @@ header{
 }
 
 #conteudo{
-    background: brown;
     height: 100%;
 }
 

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caderno MySql</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+</head>
+<style>
+    header{
+        text-align: center;
+    }
+    #conteudo{
+        width: 95%;
+        margin: 0 auto;
+    }
+    .espaco{
+        margin: 30px;
+    }
+</style>
+<body>
+    <header>
+        <h1>CADERNO MYSQL</h1>
+    </header>
+    <div id="conteudo">
+        <h2>COMANDOS BÁSICOS:</h2>
+         <p>
+            create database cadastro <br>
+            default character set utf8 <br>
+            default collate utf8_general_ci;
+         </p>
+         drop database meubanco;
+         <div class="espaco"></div>
+         <p>
+             <h2>CRIANDO UMA TABELA:</h2>
+             use cadastro;
+                create table pessoas( <br>
+                id int not null auto_increment, <br>
+                nome varchar(30) not null, <br>
+                nascimento date, <br>
+                sexo enum('M','F'), <br>
+                peso decimal(5,2),<br>
+                altura decimal(3,2),<br>
+                nacionalidade varchar(20) default 'Brasil',<br>
+                primary key (id)<br>
+                )
+         </p>
+         <div class="espaco"></div>
+         <p>
+             <h2>INSERINDO DADOS NA TABELA:</h2>
+             insert into pessoas <br>
+            (nome,nascimento,sexo,peso,altura,nacionalidade) <br>
+            values<br>
+            ('Creuza','1920-01-02','F','50.2','1.65',DEFAULT);<br>
+            <br>
+            //se a ordem for a msm da tabela é possivel ocultar os parametros<br>
+            <br>
+            insert into pessoas values<br>
+            (DEFAULT,'Creuza','1920-01-02','F','50.2','1.65',DEFAULT);<br>
+            <br>
+            select * from pessoas;
+         </p>
+         <div class="espaco"></div>
+         <p>
+             <h2>MAIS MANIPULAÇOES DE TABELA:</h2>
+             <p>
+                 <h5>Adicionar coluna no final</h5>
+                 alter table pessoas <br>
+                add column profissao varchar(10);
+             </p>
+             <p>
+                <h5>Adicionar depois de alguma coluna</h5>
+                alter table pessoas <br>
+                add column profissao varchar(10) after nome;
+            </p>
+            <p>
+                <h5>Adicionar na primeira posição</h5>
+                alter table pessoas <br>
+                add column codigo int first;
+            </p>
+            <p>
+                <h5>Modificar tabela</h5>
+                alter table pessoas <br>
+                modify column profissao varchar(20) not null default '';
+            </p>
+            <p>
+                <h5>Mudar nome tabela</h5>
+                alter table pessoas <br>
+                change column profissao prof varchar(20) not null;<br>
+                ou <br>
+                alter table pessoas <br>
+                rename to gafanhotos;
+            </p>
+         </p>
+         <div class="espaco"></div>
+         <p>
+            <h2>MANIPULANDO LINHAS</h2>
+            <p><h5>Mudar um elemento de uma linha</h5></p>
+            <p>
+                UPDATE cursos <br>
+                set nome = 'HTML5' <br>
+                where idcurso = '1';
+            </p>
+            <h5>Mudar mais de 1 elemento de uma linha</h5>
+            <p>
+                UPDATE cursos <br>
+                SET nome ='PHP', ano = '2015' <br>
+                where idcurso = '4';
+            </p>
+            <h5>Deletar elemento</h5>
+            <p>
+                delete from cursos <br>
+                where ano ='2050' <br>
+                limit 2;
+            </p>
+         </p>
+    </div>
+</body>
+</html>
